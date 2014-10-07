@@ -38,7 +38,7 @@ TEST_F(GridTest, NeighborhoodTest) {
   ASSERT_TRUE(grid_.SetIndex(7, 6, 1));
 
   ::std::vector<::std::vector<int> > neighborhood;
-  grid_.GetNeighborhood(6, 6, neighborhood);
+  EXPECT_TRUE(grid_.GetNeighborhood(6, 6, neighborhood));
   EXPECT_EQ(neighborhood.size(), 1);
 
   // Add up all the numbers in the neighborhood. If we did this right, we should
@@ -48,6 +48,12 @@ TEST_F(GridTest, NeighborhoodTest) {
     total += index;
   }
   EXPECT_EQ(8, total);
+}
+
+TEST_F(GridTest, OutOfBoundsTest) {
+  // Tests whether GetNeighborhood fails properly for out-of-bounds input.
+  ::std::vector<::std::vector<int> > neighborhood;
+  EXPECT_FALSE(grid_.GetNeighborhood(6, 6, neighborhood, 10));
 }
 
 } //  testing

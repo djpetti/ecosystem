@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include "grid.h"
 
 namespace automata {
@@ -66,10 +64,12 @@ bool Grid::GetNeighborhood(int x, int y,
     const int start_y = y - y_size / 2;
 
     // Ensure that this is within the bounds of the grid.
-    assert(end_x < x_size_ && start_x >= 0
-        && "Neighborhood x dimension is out of bounds.");
-    assert(end_y < y_size_ && start_y >= 0
-        && "Neighborhood y dimension is out of bounds.");
+    if (end_x >= x_size_ || start_x < 0) {
+      return false;
+    }
+    if (end_y >= y_size_ || start_y < 0) {
+      return false;
+    }
 
     ::std::vector<int> level_indices;
 
