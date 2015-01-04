@@ -1,10 +1,19 @@
+#include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include <algorithm>
+
 #include "grid.h"
 
 namespace automata {
 namespace grid {
 
 Grid::Grid() :
-    grid_(nullptr) {}
+    grid_(nullptr) {
+  srand(time(NULL));
+}
 
 Grid::~Grid() {
   if (grid_) {
@@ -47,13 +56,11 @@ int Grid::GetIndex(int x, int y) {
   return grid_[x * x_size_ + y];
 }
 
-bool Grid::GetNeighborhood(int x, int y,
-    ::std::vector<std::vector<int> > & output, int levels /*= 1*/) {
+bool Grid::GetNeighborhoodLocations(int x, int y,
+    ::std::vector<int> *xs, ::std::vector<int> *ys, int levels/* = 1*/) {
   if (!IsInitialized()) {
     return false;
   }
-
-  output.clear();
 
   int x_size = 3;
   int y_size = 3;
@@ -75,18 +82,19 @@ bool Grid::GetNeighborhood(int x, int y,
 
     // Get the top row and the bottom row.
     for (int i = start_x; i <= end_x; ++i) {
-      level_indices.push_back(GetIndex(i, start_y));
-      level_indices.push_back(GetIndex(i, end_y));
+      xs->push_back(i);
+      ys->push_back(start_y);
+      xs->push_back(i);
+      ys->push_back(end_y);
     }
     // Get the left and right columns, taking into account the corners, which
     // were already accounted for.
     for (int i = start_y + 1; i <= end_y - 1; ++i) {
-      level_indices.push_back(GetIndex(start_x, i));
-      level_indices.push_back(GetIndex(end_x, i));
+      xs->push_back(start_x);
+      ys->push_back(i);
+      xs->push_back(end_x);
+      ys->push_back(i);
     }
-
-    // Add our vector of indices to the output level.
-    output.push_back(level_indices);
 
     // Compute the new dimensions of the neighborhood.
     x_size += 2;
@@ -94,6 +102,129 @@ bool Grid::GetNeighborhood(int x, int y,
   }
 
   return true;
+}
+
+bool Grid::GetNeighborhood(int x, int y,
+    ::std::vector<::std::vector<int> > & indices, int levels/* = 1*/) {
+  indices.clear();
+
+  ::std::vector<int> xs, ys;
+  if (!GetNeighborhoodLocations(x, y, &xs, &ys, levels)) {
+    return false;
+  }
+
+  // We know how many locations are in each level, so we can divide our results
+  // by level.
+  uint32_t in_level = 8;
+  uint32_t current_i = 0;
+  while (current_i < xs.size()) {
+    ::std::vector<int> level_indices;
+    for (; current_i < in_level; ++current_i) {
+      level_indices.push_back(GetIndex(xs[current_i], ys[current_i]));
+    }
+
+    // Add the contents of this level to our main output vector.
+    indices.push_back(level_indices);
+
+    in_level += 4;
+  }
+
+  return true;
+}
+
+bool Grid::MoveOrganism(int x, int y,
+    const ::std::vector<MovementFactor> & factors,
+    int *new_x, int *new_y) {
+  double probabilities[8];
+  ::std::vector<int> xs, ys;
+  if (!GetNeighborhoodLocations(x, y, &xs, &ys)) {
+    return false;
+  }
+
+  CalculateProbabilities(factors, xs, ys, probabilities);
+  DoMovement(probabilities, xs, ys, new_x, new_y);
+
+  return true;
+}
+
+void Grid::CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
+    const ::std::vector<int> & xs, const ::std::vector<int> & ys,
+    double *probabilities) {
+  int total_strength = 0;
+  for (auto & factor : factors) {
+    // There is an edge case where all our factors could have a strength of
+    // zero.
+    total_strength += factor.Strength;
+  }
+  // Having the factor vector empty is valid. It means that there are no
+  // factors, and that therefore, there should be an equal probability for every
+  // neighborhood location.
+  if (factors.empty() || !total_strength) {
+    for (uint32_t i = 0; i < xs.size(); ++i) {
+      probabilities[i] = 1.0 / xs.size();
+    }
+    return;
+  }
+
+  for (uint32_t i = 0; i < xs.size(); ++i) {
+    probabilities[i] = 0;
+  }
+
+  // Calculate how far each factor is from each location and use it to change
+  // the probabilities.
+  for (auto & factor : factors) {
+    for (uint32_t i = 0; i < xs.size(); ++i) {
+      double radius = pow(pow(factor.X - xs[i], 2) + pow(factor.Y - ys[i], 2), 0.5);
+
+      if (radius != 0) {
+        probabilities[i] += (1.0 / radius) * factor.Strength;
+      } else {
+        // If our factor is in the same location that we are.
+        probabilities[i] += 10 * factor.Strength;
+      }
+    }
+  }
+
+  // Scale probabilities to between 0 and 1.
+  double min = 0;
+  for (uint32_t i = 0; i < xs.size(); ++i) {
+    // First, divide to find the average.
+    probabilities[i] /= factors.size();
+    // Find the min.
+    min = ::std::min(min, probabilities[i]);
+  }
+  double total = 0;
+  for (uint32_t i = 0; i < xs.size(); ++i) {
+    // Shift everything to make it positive and calculate total.
+    probabilities[i] = (probabilities[i] - min);
+    total += probabilities[i];
+  }
+  for (uint32_t i = 0; i < xs.size(); ++i) {
+    // Do the scaling.
+    probabilities[i] /= total;
+  }
+}
+
+void Grid::DoMovement(const double *probabilities,
+    const ::std::vector<int> & xs, const ::std::vector<int> & ys,
+    int *new_x, int *new_y) {
+  // Get a random float that's somewhere between 0 and 1.
+  double random = static_cast<double>(rand()) /
+      static_cast<double>(RAND_MAX);
+
+  // Count up until we're above it.
+  double running_total;
+  for (int i = 0; i < 8; ++i) {
+    running_total += probabilities[i];
+    if (running_total >= random) {
+      *new_x = xs[i];
+      *new_y = ys[i];
+      return;
+    }
+  }
+  // Floating point weirdness could get us here...
+  *new_x = xs[7];
+  *new_y = ys[7];
 }
 
 } //  automata

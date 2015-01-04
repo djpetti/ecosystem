@@ -11,14 +11,35 @@
 namespace automata {
 namespace grid {
 
+namespace testing {
+  // Forward declaration for testing.
+  class GridTest;
+} //  testing
+
+// Represents the movement factors at a given location, along with
+// their strengths. Positive means attractive, negative means repulsive.
+// Movement factors are things that change the likelihood that an organism will
+// move to a specific location in its neighborhood.
+struct MovementFactor {
+  int X;
+  int Y;
+  int Strength;
+};
+
 class Grid {
+  friend class testing::GridTest;
  public:
   Grid();
   ~Grid();
 
   // Initializes the grid with the specified parameters.
+  // x_size: Size in the x dimension.
+  // y_size: Size in the y dimension.
   bool Initialize(int x_size, int y_size);
-  // Sets the index of a sepcific item.
+  // Sets the index of a specific item.
+  // x: The x coordinate of the index's location.
+  // y: The y coordinate of the index's location.
+  // index: The value of the index.
   bool SetIndex(int x, int y, int index);
   // Returns the index of a specific item, or -1 in case of failure.
   int GetIndex(int x, int y);
@@ -29,9 +50,59 @@ class Grid {
   // indices in the neighborbood for one level. The subvectors are organized in
   // ascending order by level.
   bool GetNeighborhood(int x, int y,
-      ::std::vector<::std::vector<int> > & output, int levels = 1);
+      ::std::vector<::std::vector<int> > & indices, int levels = 1);
+  // Takes a vector of movement factors, and chooses a location for an organism
+  // to move to.
+  // x: x coordinate of the organism's current position.
+  // y: y coordinate of the organism's current position.
+  // factors: A vector of movement factors that will be considered.
+  // new_x: The x coordinate of the organism's new position.
+  // new_y: The y coordinate of the organism's new position.
+  bool MoveOrganism(int x, int y,
+      const ::std::vector<MovementFactor> & factors,
+      int *new_x, int *new_y);
 
  private:
+  // Calculates the probability of moving to every square in the extended
+  // neighborhood.
+  // factors: a vector of factors in the grid, which are used to calculate the
+  // probabilities.
+  // xs: The x coordinates of the locations in the neighborhood.
+  // ys: The y coordinates of the locations in the neighborhood.
+  // probabilities: an array of probability values. Should be an array capable
+  // of holding a number of items equal to the size of the xs and ys vectors.
+  void CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
+      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
+      double *probabilities);
+  // Gets the locations that are in a neighborhood.
+  // x: The x coordinate of the location we are finding the neighborhood for.
+  // y: The y coordinate of the location we are finding the neighborhood for.
+  // xs: Vector to be filled with the x coordinates of the locations in the
+  // neighborhood.
+  // ys: Vector to be filled with the y coordinates of the locations in the
+  // neighborhood.
+  // levels: An optional argument that specifies how big the neighborhood will
+  // be. A level of 1 includes only the 8 spaces immediately surrounding the
+  // location. A level of 2 includes those 8 spaces, and the 16 spaces
+  // surrounding them. etc.
+  // Returns: true if it succeeds, false if the grid is not initialized, or if
+  // the neighborhood would be out of its bounds.
+  bool GetNeighborhoodLocations(int x, int y,
+      ::std::vector<int> *xs, ::std::vector<int> *ys, int levels = 1);
+  // Takes a set of probabilities, and uses them to calculate where an organism
+  // should move in its neighborhood.
+  // probabilities: The array of probabilities for each location, generally
+  // should be the one produced by CalculateProbabilities.
+  // xs: The x coordinates of the locations in the neighborhood. Should be the
+  // same one as was passed to CalculateProbabilities.
+  // ys: The y coordinates of the locations in the neighborhood. Should be the
+  // same one as was passed to CalculateProbabilities.
+  // new_x: The x coordinate of the organism's new location.
+  // new_y: The y coordinate of the organism's new location.
+  void DoMovement(const double *probabilities,
+      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
+      int *new_x, int *new_y);
+
   // Returns whether or not the underlying array is initialized.
   inline bool IsInitialized() {
     return initialized_;
