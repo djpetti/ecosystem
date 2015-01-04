@@ -141,6 +141,9 @@ bool Grid::MoveOrganism(int x, int y,
   if (!GetNeighborhoodLocations(x, y, &xs, &ys)) {
     return false;
   }
+  // We want it to have the possibility of staying in the same place also.
+  xs.push_back(x);
+  ys.push_back(y);
 
   double probabilities[8];
   CalculateProbabilities(visible_factors, xs, ys, probabilities);
