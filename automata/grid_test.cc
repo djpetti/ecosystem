@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 
 namespace automata {
-namespace grid {
 namespace testing {
 
 class GridTest : public ::testing::Test {
@@ -29,6 +28,11 @@ class GridTest : public ::testing::Test {
   inline void TestGetNeighborhoodLocations(int x, int y,
       ::std::vector<int> *xs, ::std::vector<int> *ys, int levels = 1) {
     EXPECT_TRUE(grid_.GetNeighborhoodLocations(x, y, xs, ys, levels));
+  }
+
+  inline void TestRemoveInvisible(int x, int y,
+      ::std::vector<MovementFactor> *factors) {
+    grid_.RemoveInvisible(x, y, factors);
   }
 
   Grid grid_;
@@ -107,7 +111,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   }
 
   // A factor with a strength of zero should have the same effect.
-  MovementFactor factor {0, 0, 0};
+  MovementFactor factor {0, 0, 0, -1};
   factors.push_back(factor);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
@@ -154,8 +158,14 @@ TEST_F(GridTest, MotionFactorsTest) {
   for (int i = 1; i < 7; ++i) {
     EXPECT_GT(probabilities[7], probabilities[i]);
   }
+
+  // This same attractive factor should stop working if we set its visibility
+  // low enough.
+  auto invisible_factors = factors;
+  invisible_factors[0].Visibility = 1;
+  TestRemoveInvisible(1, 1, &invisible_factors);
+  EXPECT_TRUE(invisible_factors.empty());
 }
 
 } //  testing
-} //  grid
 } //  automata

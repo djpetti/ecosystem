@@ -9,7 +9,6 @@
 // each grid location.
 
 namespace automata {
-namespace grid {
 
 namespace testing {
   // Forward declaration for testing.
@@ -21,9 +20,15 @@ namespace testing {
 // Movement factors are things that change the likelihood that an organism will
 // move to a specific location in its neighborhood.
 struct MovementFactor {
+  // The X coordinate of the factor's location.
   int X;
+  // The Y coordinate of the factor's location.
   int Y;
+  // The strength of the factor.
   int Strength;
+  // The maximum distance away in cells that this factor can be perceived from.
+  // < 0 means an unlimmited distance.
+  int Visibility;
 };
 
 class Grid {
@@ -102,6 +107,12 @@ class Grid {
   void DoMovement(const double *probabilities,
       const ::std::vector<int> & xs, const ::std::vector<int> & ys,
       int *new_x, int *new_y);
+  // Looks at factor visibilities and removes any that are not visible to the
+  // organism.
+  // x: The x coordinate of the organism's position.
+  // y: The y coordinate of the organism's position.
+  // factors: The vector of factors that we will be processing.
+  void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors);
 
   // Returns whether or not the underlying array is initialized.
   inline bool IsInitialized() {
@@ -117,7 +128,6 @@ class Grid {
   int *grid_;
 };
 
-}  // grid
 }  // automata
 
 #endif

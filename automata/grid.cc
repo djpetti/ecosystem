@@ -8,7 +8,6 @@
 #include "grid.h"
 
 namespace automata {
-namespace grid {
 
 Grid::Grid() :
     grid_(nullptr) {
@@ -135,13 +134,17 @@ bool Grid::GetNeighborhood(int x, int y,
 bool Grid::MoveOrganism(int x, int y,
     const ::std::vector<MovementFactor> & factors,
     int *new_x, int *new_y) {
-  double probabilities[8];
+  ::std::vector<MovementFactor> visible_factors = factors;
+  RemoveInvisible(x, y, &visible_factors);
+
   ::std::vector<int> xs, ys;
   if (!GetNeighborhoodLocations(x, y, &xs, &ys)) {
     return false;
   }
 
-  CalculateProbabilities(factors, xs, ys, probabilities);
+  double probabilities[8];
+  CalculateProbabilities(visible_factors, xs, ys, probabilities);
+
   DoMovement(probabilities, xs, ys, new_x, new_y);
 
   return true;
@@ -174,7 +177,8 @@ void Grid::CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
   // the probabilities.
   for (auto & factor : factors) {
     for (uint32_t i = 0; i < xs.size(); ++i) {
-      double radius = pow(pow(factor.X - xs[i], 2) + pow(factor.Y - ys[i], 2), 0.5);
+      const double radius = pow(pow(factor.X - xs[i], 2) +
+          pow(factor.Y - ys[i], 2), 0.5);
 
       if (radius != 0) {
         probabilities[i] += (1.0 / radius) * factor.Strength;
@@ -209,7 +213,7 @@ void Grid::DoMovement(const double *probabilities,
     const ::std::vector<int> & xs, const ::std::vector<int> & ys,
     int *new_x, int *new_y) {
   // Get a random float that's somewhere between 0 and 1.
-  double random = static_cast<double>(rand()) /
+  const double random = static_cast<double>(rand()) /
       static_cast<double>(RAND_MAX);
 
   // Count up until we're above it.
@@ -227,5 +231,21 @@ void Grid::DoMovement(const double *probabilities,
   *new_y = ys[7];
 }
 
+void Grid::RemoveInvisible(int x, int y,
+    ::std::vector<MovementFactor> *factors) {
+  ::std::vector<uint32_t> to_delete;
+  for (uint32_t i = 0; i < factors->size(); ++i) {
+    const double radius = pow(pow((*factors)[i].X - x, 2) +
+        pow((*factors)[i].Y - y, 2), 0.5);
+
+    if ((*factors)[i].Visibility > 0 && radius > (*factors)[i].Visibility) {
+      to_delete.push_back(i);
+    }
+  }
+
+  for (auto index : to_delete) {
+    factors->erase(factors->begin() + index);
+  }
+}
+
 } //  automata
-} //  grid
