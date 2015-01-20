@@ -133,12 +133,12 @@ bool Grid::GetNeighborhood(int x, int y,
 
 bool Grid::MoveOrganism(int x, int y,
     const ::std::vector<MovementFactor> & factors,
-    int *new_x, int *new_y) {
+    int *new_x, int *new_y, int levels/* = 1*/, int vision/* = -1*/) {
   ::std::vector<MovementFactor> visible_factors = factors;
-  RemoveInvisible(x, y, &visible_factors);
+  RemoveInvisible(x, y, &visible_factors, vision);
 
   ::std::vector<int> xs, ys;
-  if (!GetNeighborhoodLocations(x, y, &xs, &ys)) {
+  if (!GetNeighborhoodLocations(x, y, &xs, &ys, levels)) {
     return false;
   }
   // We want it to have the possibility of staying in the same place also.
@@ -153,14 +153,14 @@ bool Grid::MoveOrganism(int x, int y,
   return true;
 }
 
-void Grid::CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
+void Grid::CalculateProbabilities(::std::vector<MovementFactor> & factors,
     const ::std::vector<int> & xs, const ::std::vector<int> & ys,
     double *probabilities) {
   int total_strength = 0;
   for (auto & factor : factors) {
     // There is an edge case where all our factors could have a strength of
     // zero.
-    total_strength += factor.Strength;
+    total_strength += factor.GetStrength();
   }
   // Having the factor vector empty is valid. It means that there are no
   // factors, and that therefore, there should be an equal probability for every
@@ -180,14 +180,13 @@ void Grid::CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
   // the probabilities.
   for (auto & factor : factors) {
     for (uint32_t i = 0; i < xs.size(); ++i) {
-      const double radius = pow(pow(factor.X - xs[i], 2) +
-          pow(factor.Y - ys[i], 2), 0.5);
+      const double radius = factor.GetDistance(xs[i], ys[i]);
 
       if (radius != 0) {
-        probabilities[i] += (1.0 / radius) * factor.Strength;
+        probabilities[i] += (1.0 / radius) * factor.GetStrength();
       } else {
         // If our factor is in the same location that we are.
-        probabilities[i] += 10 * factor.Strength;
+        probabilities[i] += 10 * factor.GetStrength();
       }
     }
   }
@@ -235,13 +234,14 @@ void Grid::DoMovement(const double *probabilities,
 }
 
 void Grid::RemoveInvisible(int x, int y,
-    ::std::vector<MovementFactor> *factors) {
+    ::std::vector<MovementFactor> *factors, int vision) {
   ::std::vector<uint32_t> to_delete;
   for (uint32_t i = 0; i < factors->size(); ++i) {
-    const double radius = pow(pow((*factors)[i].X - x, 2) +
-        pow((*factors)[i].Y - y, 2), 0.5);
+    const double radius = (*factors)[i].GetDistance(x, y);
 
-    if ((*factors)[i].Visibility > 0 && radius > (*factors)[i].Visibility) {
+    if (((*factors)[i].GetVisibility() > 0 &&
+        radius > (*factors)[i].GetVisibility()) ||
+        (vision > 0 && radius > vision)) {
       to_delete.push_back(i);
     }
   }

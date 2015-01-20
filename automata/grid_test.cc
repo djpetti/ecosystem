@@ -2,6 +2,7 @@
 
 #include "grid.h"
 #include "gtest/gtest.h"
+#include "movement_factor.h"
 
 namespace automata {
 namespace testing {
@@ -13,7 +14,7 @@ class GridTest : public ::testing::Test {
   }
 
   inline void TestCalculateProbabilities(
-      const ::std::vector<MovementFactor> & factors,
+      ::std::vector<MovementFactor> & factors,
       const ::std::vector<int> & xs, const ::std::vector<int> & ys,
       double *probabilities) {
     grid_.CalculateProbabilities(factors, xs, ys, probabilities);
@@ -31,8 +32,8 @@ class GridTest : public ::testing::Test {
   }
 
   inline void TestRemoveInvisible(int x, int y,
-      ::std::vector<MovementFactor> *factors) {
-    grid_.RemoveInvisible(x, y, factors);
+      ::std::vector<MovementFactor> *factors, int vision) {
+    grid_.RemoveInvisible(x, y, factors, vision);
   }
 
   Grid grid_;
@@ -111,7 +112,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   }
 
   // A factor with a strength of zero should have the same effect.
-  MovementFactor factor {0, 0, 0, -1};
+  MovementFactor factor(0, 0, 0, -1);
   factors.push_back(factor);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
@@ -120,7 +121,7 @@ TEST_F(GridTest, MotionFactorsTest) {
 
   // An attractive factor in the neighborhood should lead to a high probability
   // for its location.
-  factors[0].Strength = 100;
+  factors[0].SetStrength(100);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_GT(probabilities[0], probabilities[i]);
@@ -128,9 +129,9 @@ TEST_F(GridTest, MotionFactorsTest) {
 
   // Two attractive factors in opposite corners of the neighborhood should
   // create two "poles" of attraction.
-  factor.X = 2;
-  factor.Y = 2;
-  factor.Strength = 100;
+  factor.SetX(2);
+  factor.SetY(2);
+  factor.SetStrength(100);
   factors.push_back(factor);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   // The two poles.
@@ -143,7 +144,7 @@ TEST_F(GridTest, MotionFactorsTest) {
 
   // A repulsive factor in the neighborhood should do the opposite.
   factors.pop_back();
-  factors[0].Strength = -100;
+  factors[0].SetStrength(-100);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_LT(probabilities[0], probabilities[i]);
@@ -151,9 +152,9 @@ TEST_F(GridTest, MotionFactorsTest) {
 
   // An attractive factor just outside the neighborhood should work similarly to
   // one inside the neighborhood.
-  factors[0].X = 3;
-  factors[0].Y = 1;
-  factors[0].Strength = 100;
+  factors[0].SetX(3);
+  factors[0].SetY(1);
+  factors[0].SetStrength(100);
   TestCalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 7; ++i) {
     EXPECT_GT(probabilities[7], probabilities[i]);
@@ -162,9 +163,14 @@ TEST_F(GridTest, MotionFactorsTest) {
   // This same attractive factor should stop working if we set its visibility
   // low enough.
   auto invisible_factors = factors;
-  invisible_factors[0].Visibility = 1;
-  TestRemoveInvisible(1, 1, &invisible_factors);
+  invisible_factors[0].SetVisibility(1);
+  TestRemoveInvisible(1, 1, &invisible_factors, -1);
   EXPECT_TRUE(invisible_factors.empty());
+
+  // We should also get this same result if we set the organism's vision low
+  // enough.
+  TestRemoveInvisible(1, 1, &factors, 1);
+  EXPECT_TRUE(factors.empty());
 }
 
 } //  testing

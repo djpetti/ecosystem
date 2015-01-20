@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "movement_factor.h"
+
 // Defines functions for dealing with the grid at a low level. The way the grid
 // works is that the C++ code populates its representation of the grid with
 // indices into a list in the Python code, which contains the actual data on
@@ -14,22 +16,6 @@ namespace testing {
   // Forward declaration for testing.
   class GridTest;
 } //  testing
-
-// Represents the movement factors at a given location, along with
-// their strengths. Positive means attractive, negative means repulsive.
-// Movement factors are things that change the likelihood that an organism will
-// move to a specific location in its neighborhood.
-struct MovementFactor {
-  // The X coordinate of the factor's location.
-  int X;
-  // The Y coordinate of the factor's location.
-  int Y;
-  // The strength of the factor.
-  int Strength;
-  // The maximum distance away in cells that this factor can be perceived from.
-  // < 0 means an unlimmited distance.
-  int Visibility;
-};
 
 class Grid {
   friend class testing::GridTest;
@@ -46,7 +32,9 @@ class Grid {
   // y: The y coordinate of the index's location.
   // index: The value of the index.
   bool SetIndex(int x, int y, int index);
-  // Returns the index of a specific item, or -1 in case of failure.
+  // x: The x coordinate of the index's location.
+  // y: The y coordinate of the index's location.
+  // Returns: The index of a specific item, or -1 in case of failure.
   int GetIndex(int x, int y);
   // Returns the indices of the locations in the extended neighborhood around
   // a specific location. If levels is something other than one, it includes
@@ -63,9 +51,14 @@ class Grid {
   // factors: A vector of movement factors that will be considered.
   // new_x: The x coordinate of the organism's new position.
   // new_y: The y coordinate of the organism's new position.
+  // levels: The number of levels that will be used when building the
+  // neighborhood for this organism, which contains the possible locations where
+  // we could move. See GetNeighborhood for an explanation of levels.
+  // vision: The maximum number of cells we can be from any factor and still
+  // perceive it.
   bool MoveOrganism(int x, int y,
       const ::std::vector<MovementFactor> & factors,
-      int *new_x, int *new_y);
+      int *new_x, int *new_y, int levels = 1, int vision = -1);
 
  private:
   // Calculates the probability of moving to every square in the extended
@@ -76,7 +69,7 @@ class Grid {
   // ys: The y coordinates of the locations in the neighborhood.
   // probabilities: an array of probability values. Should be an array capable
   // of holding a number of items equal to the size of the xs and ys vectors.
-  void CalculateProbabilities(const ::std::vector<MovementFactor> & factors,
+  void CalculateProbabilities(::std::vector<MovementFactor> & factors,
       const ::std::vector<int> & xs, const ::std::vector<int> & ys,
       double *probabilities);
   // Gets the locations that are in a neighborhood.
@@ -112,7 +105,10 @@ class Grid {
   // x: The x coordinate of the organism's position.
   // y: The y coordinate of the organism's position.
   // factors: The vector of factors that we will be processing.
-  void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors);
+  // vision: Maximum distance we can be from a factor in cells, and still
+  // perceive it. A negative value means that there is no limit.
+  void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
+      int vision);
 
   // Returns whether or not the underlying array is initialized.
   inline bool IsInitialized() {

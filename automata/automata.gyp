@@ -5,6 +5,7 @@
       'type': 'static_library',
       'sources': [
         'grid.cc',
+        'movement_factor.cc',
       ],
     },
     {
