@@ -1,8 +1,8 @@
 #include <vector>
 
-#include "grid.h"
+#include "automata/grid.h"
+#include "automata/movement_factor.h"
 #include "gtest/gtest.h"
-#include "movement_factor.h"
 
 namespace automata {
 namespace testing {

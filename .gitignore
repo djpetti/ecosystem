@@ -1,2 +1,4 @@
 build/out
 build/externals/downloaded
+swig_modules
+*.pyc

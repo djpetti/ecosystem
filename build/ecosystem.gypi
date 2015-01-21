@@ -4,6 +4,10 @@
       '-std=c++11',
       '-Werror',
       '-Wall',
+      '-fPIC',
+    ],
+    'include_dirs': [
+      '<(DEPTH)/',
     ],
   },
   'variables': {

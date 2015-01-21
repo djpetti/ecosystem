@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "movement_factor.h"
+#include "automata/movement_factor.h"
 
 // Defines functions for dealing with the grid at a low level. The way the grid
 // works is that the C++ code populates its representation of the grid with

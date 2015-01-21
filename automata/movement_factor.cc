@@ -1,7 +1,7 @@
 #include <math.h>
 
-#include "movement_factor.h"
-#include "organism.h"
+#include "automata/movement_factor.h"
+#include "automata/organism.h"
 
 namespace automata {
 

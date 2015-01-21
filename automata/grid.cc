@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-#include "grid.h"
+#include "automata/grid.h"
 
 namespace automata {
 
