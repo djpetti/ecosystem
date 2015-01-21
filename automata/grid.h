@@ -73,6 +73,8 @@ class Grid {
       const ::std::vector<int> & xs, const ::std::vector<int> & ys,
       double *probabilities);
   // Gets the locations that are in a neighborhood.
+  // If any locations that should be in the neighborhood are outside the bounds
+  // of the grid, they will not be included.
   // x: The x coordinate of the location we are finding the neighborhood for.
   // y: The y coordinate of the location we are finding the neighborhood for.
   // xs: Vector to be filled with the x coordinates of the locations in the

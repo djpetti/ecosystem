@@ -62,7 +62,7 @@ TEST_F(GridTest, NeighborhoodTest) {
 
   ::std::vector<::std::vector<int> > neighborhood;
   EXPECT_TRUE(grid_.GetNeighborhood(6, 6, neighborhood));
-  EXPECT_EQ(neighborhood.size(), 1);
+  EXPECT_EQ(1, neighborhood.size());
 
   // Add up all the numbers in the neighborhood. If we did this right, we should
   // get exactly six.
@@ -74,9 +74,14 @@ TEST_F(GridTest, NeighborhoodTest) {
 }
 
 TEST_F(GridTest, OutOfBoundsTest) {
-  // Does GetNeighborhood fails properly for out-of-bounds input?
+  // Does GetNeighborhood deal properly with out-of-bounds input?
   ::std::vector<::std::vector<int> > neighborhood;
-  EXPECT_FALSE(grid_.GetNeighborhood(6, 6, neighborhood, 10));
+  // Giving it a starting point outside the boundaries of the grid should make
+  // it fail.
+  EXPECT_FALSE(grid_.GetNeighborhood(-1, -1, neighborhood));
+  // Putting it in a corner should truncate the neighborhood.
+  EXPECT_TRUE(grid_.GetNeighborhood(0, 0, neighborhood));
+  EXPECT_EQ(3, neighborhood[0].size());
 }
 
 TEST_F(GridTest, MotionTest) {

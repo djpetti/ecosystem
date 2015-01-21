@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h> // TEMP
 #include <stdlib.h>
 #include <time.h>
 
@@ -61,6 +62,11 @@ bool Grid::GetNeighborhoodLocations(int x, int y,
     return false;
   }
 
+  if (x < 0 || y < 0 || x >= x_size_ || y >= y_size_) {
+    // The starting point isn't within the bounds of the grid.
+    return false;
+  }
+
   int x_size = 3;
   int y_size = 3;
   for (int level = 1; level <= levels; ++level) {
@@ -69,30 +75,35 @@ bool Grid::GetNeighborhoodLocations(int x, int y,
     const int start_x = x - x_size / 2;
     const int start_y = y - y_size / 2;
 
-    // Ensure that this is within the bounds of the grid.
-    if (end_x >= x_size_ || start_x < 0) {
-      return false;
-    }
-    if (end_y >= y_size_ || start_y < 0) {
-      return false;
-    }
-
     ::std::vector<int> level_indices;
 
     // Get the top row and the bottom row.
     for (int i = start_x; i <= end_x; ++i) {
-      xs->push_back(i);
-      ys->push_back(start_y);
-      xs->push_back(i);
-      ys->push_back(end_y);
+      if (i >= 0 && i < x_size_) {
+        if (start_y >= 0) {
+          // Point is in-bounds.
+          xs->push_back(i);
+          ys->push_back(start_y);
+        }
+        if (end_y < y_size_) {
+          xs->push_back(i);
+          ys->push_back(end_y);
+        }
+      }
     }
     // Get the left and right columns, taking into account the corners, which
     // were already accounted for.
     for (int i = start_y + 1; i <= end_y - 1; ++i) {
-      xs->push_back(start_x);
-      ys->push_back(i);
-      xs->push_back(end_x);
-      ys->push_back(i);
+      if (i >= 0 && i < y_size_) {
+        if (start_x >= 0) {
+          xs->push_back(start_x);
+          ys->push_back(i);
+        }
+        if (end_x < x_size_) {
+          xs->push_back(end_x);
+          ys->push_back(i);
+        }
+      }
     }
 
     // Compute the new dimensions of the neighborhood.
@@ -118,7 +129,7 @@ bool Grid::GetNeighborhood(int x, int y,
   uint32_t current_i = 0;
   while (current_i < xs.size()) {
     ::std::vector<int> level_indices;
-    for (; current_i < in_level; ++current_i) {
+    for (; current_i < in_level && current_i < xs.size(); ++current_i) {
       level_indices.push_back(GetIndex(xs[current_i], ys[current_i]));
     }
 

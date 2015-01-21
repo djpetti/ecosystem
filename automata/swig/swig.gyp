@@ -24,6 +24,16 @@
             'automata.py',
           ],
           'action': ['swig', '-python', '-c++', '<@(_inputs)'],
+        },
+        {
+          'action_name': 'swig_transfer',
+          'inputs': [
+            'automata.py',
+          ],
+          'outputs': [
+            '<(DEPTH)/swig_modules/automata.py',
+            '<(DEPTH)/swig_modules/_automata.so',
+          ],
           'action': ['./swig_transfer.sh', '<(DEPTH)'],
         },
       ],
