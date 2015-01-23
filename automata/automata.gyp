@@ -7,6 +7,7 @@
         'grid.cc',
         'movement_factor.cc',
         'organism.cc',
+        'grid_object.cc',
       ],
     },
   ],

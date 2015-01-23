@@ -17,6 +17,9 @@ namespace testing {
   class GridTest;
 } //  testing
 
+// Forward declaration of GridObject to break circular dependency.
+class GridObject;
+
 class Grid {
   friend class testing::GridTest;
  public:
@@ -27,25 +30,25 @@ class Grid {
   // x_size: Size in the x dimension.
   // y_size: Size in the y dimension.
   bool Initialize(int x_size, int y_size);
-  // Sets the index of a specific item.
+  // Sets the occupant of a specific cell.
   // x: The x coordinate of the index's location.
   // y: The y coordinate of the index's location.
-  // index: The value of the index.
-  bool SetIndex(int x, int y, int index);
+  // occupant: The grid object to occupy this cell.
+  bool SetOccupant(int x, int y, GridObject *occupant);
   // x: The x coordinate of the index's location.
   // y: The y coordinate of the index's location.
-  // Returns: The index of a specific item, or -1 in case of failure.
-  int GetIndex(int x, int y);
-  // Returns the indices of the locations in the extended neighborhood around
+  // Returns: The occupant of the cell, or nullptr in case of failure.
+  GridObject *GetOccupant(int x, int y);
+  // Returns the occupants of the locations in the extended neighborhood around
   // a specific location. If levels is something other than one, it includes
   // items in each successive level around the neighborhood. The output argument
-  // specifies a reference to a vector of vectors. Each subvector represents the
+  // specifies a pointer to a vector of vectors. Each subvector represents the
   // indices in the neighborbood for one level. The subvectors are organized in
   // ascending order by level.
   bool GetNeighborhood(int x, int y,
-      ::std::vector<::std::vector<int> > & indices, int levels = 1);
-  // Takes a vector of movement factors, and chooses a location for an organism
-  // to move to.
+      ::std::vector<::std::vector<GridObject *> > *objects, int levels = 1);
+  // Takes a vector of movement factors, and chooses a location for a grid
+  // object to move to.
   // x: x coordinate of the organism's current position.
   // y: y coordinate of the organism's current position.
   // factors: A vector of movement factors that will be considered.
@@ -56,11 +59,20 @@ class Grid {
   // we could move. See GetNeighborhood for an explanation of levels.
   // vision: The maximum number of cells we can be from any factor and still
   // perceive it.
-  bool MoveOrganism(int x, int y,
+  bool MoveObject(int x, int y,
       const ::std::vector<MovementFactor> & factors,
       int *new_x, int *new_y, int levels = 1, int vision = -1);
 
  private:
+  // A structure for representing cells in the grid.
+  struct Cell {
+    // A cell needs to keep track of at most two objects.
+    GridObject *Object1;
+    GridObject *Object2;
+    // Whether we want to prevent things from moving here.
+    bool Blacklisted;
+  };
+
   // Calculates the probability of moving to every square in the extended
   // neighborhood.
   // factors: a vector of factors in the grid, which are used to calculate the
@@ -89,7 +101,7 @@ class Grid {
   // the neighborhood would be out of its bounds.
   bool GetNeighborhoodLocations(int x, int y,
       ::std::vector<int> *xs, ::std::vector<int> *ys, int levels = 1);
-  // Takes a set of probabilities, and uses them to calculate where an organism
+  // Takes a set of probabilities, and uses them to calculate where an object
   // should move in its neighborhood.
   // probabilities: The array of probabilities for each location, generally
   // should be the one produced by CalculateProbabilities.
@@ -103,9 +115,9 @@ class Grid {
       const ::std::vector<int> & xs, const ::std::vector<int> & ys,
       int *new_x, int *new_y);
   // Looks at factor visibilities and removes any that are not visible to the
-  // organism.
-  // x: The x coordinate of the organism's position.
-  // y: The y coordinate of the organism's position.
+  // object.
+  // x: The x coordinate of the objects's position.
+  // y: The y coordinate of the objects's position.
   // factors: The vector of factors that we will be processing.
   // vision: Maximum distance we can be from a factor in cells, and still
   // perceive it. A negative value means that there is no limit.
@@ -123,7 +135,7 @@ class Grid {
   int x_size_;
   int y_size_;
   // A pointer to the underlying grid array.
-  int *grid_;
+  Cell *grid_;
 };
 
 }  // automata

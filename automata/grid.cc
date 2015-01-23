@@ -25,35 +25,37 @@ bool Grid::Initialize(int x_size, int y_size) {
   x_size_ = x_size;
   y_size_ = y_size;
 
-  grid_ = new int[x_size * y_size];
+  grid_ = new Cell[x_size * y_size];
   if (!grid_) {
     return false;
   }
 
-  // Set everything to -1, to indicate that no indices are set.
-  for (int i = 0; i < x_size_ * y_size_; ++i) {
-    grid_[i] = -1;
+  // Set everything to a default initialization.
+  for (int i = 0; i < x_size * y_size; ++i) {
+    grid_[i].Object1 = nullptr;
+    grid_[i].Object2 = nullptr;
+    grid_[i].Blacklisted = false;
   }
 
   initialized_ = true;
   return true;
 }
 
-bool Grid::SetIndex(int x, int y, int index) {
+bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
   if (!IsInitialized()) {
     return false;
   }
 
-  grid_[x * x_size_ + y] = index;
+  grid_[x * x_size_ + y].Object1 = occupant;
   return true;
 }
 
-int Grid::GetIndex(int x, int y) {
+GridObject *Grid::GetOccupant(int x, int y) {
   if (!IsInitialized()) {
-    return -1;
+    return nullptr;
   }
 
-  return grid_[x * x_size_ + y];
+  return grid_[x * x_size_ + y].Object1;
 }
 
 bool Grid::GetNeighborhoodLocations(int x, int y,
@@ -115,8 +117,8 @@ bool Grid::GetNeighborhoodLocations(int x, int y,
 }
 
 bool Grid::GetNeighborhood(int x, int y,
-    ::std::vector<::std::vector<int> > & indices, int levels/* = 1*/) {
-  indices.clear();
+    ::std::vector<::std::vector<GridObject *> > *objects, int levels/* = 1*/) {
+  objects->clear();
 
   ::std::vector<int> xs, ys;
   if (!GetNeighborhoodLocations(x, y, &xs, &ys, levels)) {
@@ -128,13 +130,13 @@ bool Grid::GetNeighborhood(int x, int y,
   uint32_t in_level = 8;
   uint32_t current_i = 0;
   while (current_i < xs.size()) {
-    ::std::vector<int> level_indices;
+    ::std::vector<GridObject *> level_objects;
     for (; current_i < in_level && current_i < xs.size(); ++current_i) {
-      level_indices.push_back(GetIndex(xs[current_i], ys[current_i]));
+      level_objects.push_back(GetOccupant(xs[current_i], ys[current_i]));
     }
 
     // Add the contents of this level to our main output vector.
-    indices.push_back(level_indices);
+    objects->push_back(level_objects);
 
     in_level += 4;
   }
@@ -142,7 +144,7 @@ bool Grid::GetNeighborhood(int x, int y,
   return true;
 }
 
-bool Grid::MoveOrganism(int x, int y,
+bool Grid::MoveObject(int x, int y,
     const ::std::vector<MovementFactor> & factors,
     int *new_x, int *new_y, int levels/* = 1*/, int vision/* = -1*/) {
   ::std::vector<MovementFactor> visible_factors = factors;
@@ -261,5 +263,20 @@ void Grid::RemoveInvisible(int x, int y,
     factors->erase(factors->begin() + index);
   }
 }
+
+/*void Grid::RemoveOccupied(::std::vector<int> *xs, ::std::vector<int> *ys) {
+  ::std::vector<int> to_delete;
+  for (uint32_t i = 0; i < xs.size(); ++i) {
+    if (GetIndex((*xs)[i], (*ys)[i]) > 0) {
+      // This cell is already occupied.
+      to_delete.push_back(i);
+    }
+  }
+
+  for (auto index : to_delete) {
+    xs.erase(xs.begin() + index);
+    ys.erase(ys.begin() + index);
+  }
+}*/
 
 } //  automata

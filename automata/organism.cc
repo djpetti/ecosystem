@@ -3,14 +3,11 @@
 namespace automata {
 
 Organism::Organism(Grid *grid, int index, int x, int y) :
-    grid_(grid),
-    index_(index),
-    x_(x),
-    y_(y) {}
+    GridObject(grid, index, x, y) {}
 
 bool Organism::UpdatePosition() {
   int x, y;
-  if (!grid_->MoveOrganism(x_, y_, factors_, &x, &y, speed_, vision_)) {
+  if (!grid_->MoveObject(x_, y_, factors_, &x, &y, speed_, vision_)) {
     return false;
   }
 

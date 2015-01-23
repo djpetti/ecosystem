@@ -2,10 +2,19 @@
 %include typemaps.i
 
 %{
-#include "../organism.h"
 #include "../grid.h"
+#include "../grid_object.h"
+#include "../organism.h"
 using namespace automata;
 %}
+
+class GridObject {
+ public:
+  GridObject(Grid *grid, int index, int x, int y);
+  void SetIndex(int index);
+  bool SetPosition(int x, int y);
+  void GetPosition(int *OUTPUT, int *OUTPUT);
+};
 
 class Organism {
  public:

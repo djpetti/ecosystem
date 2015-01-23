@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "automata/grid.h"
+#include "automata/grid_object.h"
 #include "automata/movement_factor.h"
 #include "gtest/gtest.h"
 
@@ -39,48 +40,48 @@ class GridTest : public ::testing::Test {
   Grid grid_;
 };
 
-TEST_F(GridTest, IndexTest) {
+TEST_F(GridTest, OccupantTest) {
   // Do SetIndex() and GetIndex() work?
-  EXPECT_LE(grid_.GetIndex(0, 0), 0);
-  EXPECT_TRUE(grid_.SetIndex(0, 0, 1));
-  EXPECT_EQ(grid_.GetIndex(0, 0), 1);
+  EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
+
+  GridObject object(nullptr, 0, 0, 0);
+  EXPECT_TRUE(grid_.SetOccupant(0, 0, &object));
+  EXPECT_EQ(grid_.GetOccupant(0, 0), &object);
 
   // Clear the grid again.
-  ASSERT_TRUE(grid_.SetIndex(0, 0, -1));
+  ASSERT_TRUE(grid_.SetOccupant(0, 0, nullptr));
 }
 
 TEST_F(GridTest, NeighborhoodTest) {
   // Does getting the indices in a neighborhood work?
   // Set the extended neighborhood of the location in the middle of the grid to
   // be all ones.
+  GridObject object(nullptr, 0, 0, 0);
   for (int i = 5; i <= 7; ++i) {
-    ASSERT_TRUE(grid_.SetIndex(i, 5, 1));
-    ASSERT_TRUE(grid_.SetIndex(i, 7, 1));
+    ASSERT_TRUE(grid_.SetOccupant(i, 5, &object));
+    ASSERT_TRUE(grid_.SetOccupant(i, 7, &object));
   }
-  ASSERT_TRUE(grid_.SetIndex(5, 6, 1));
-  ASSERT_TRUE(grid_.SetIndex(7, 6, 1));
+  ASSERT_TRUE(grid_.SetOccupant(5, 6, &object));
+  ASSERT_TRUE(grid_.SetOccupant(7, 6, &object));
 
-  ::std::vector<::std::vector<int> > neighborhood;
-  EXPECT_TRUE(grid_.GetNeighborhood(6, 6, neighborhood));
+  ::std::vector<::std::vector<GridObject *> > neighborhood;
+  EXPECT_TRUE(grid_.GetNeighborhood(6, 6, &neighborhood));
   EXPECT_EQ(1, neighborhood.size());
 
-  // Add up all the numbers in the neighborhood. If we did this right, we should
-  // get exactly six.
-  int total = 0;
-  for (auto & index : neighborhood[0]) {
-    total += index;
+  // Check that everything in the neighborhood is what we expect it to be.
+  for (auto new_object : neighborhood[0]) {
+    EXPECT_EQ(&object, new_object);
   }
-  EXPECT_EQ(8, total);
 }
 
 TEST_F(GridTest, OutOfBoundsTest) {
   // Does GetNeighborhood deal properly with out-of-bounds input?
-  ::std::vector<::std::vector<int> > neighborhood;
+  ::std::vector<::std::vector<GridObject *> > neighborhood;
   // Giving it a starting point outside the boundaries of the grid should make
   // it fail.
-  EXPECT_FALSE(grid_.GetNeighborhood(-1, -1, neighborhood));
+  EXPECT_FALSE(grid_.GetNeighborhood(-1, -1, &neighborhood));
   // Putting it in a corner should truncate the neighborhood.
-  EXPECT_TRUE(grid_.GetNeighborhood(0, 0, neighborhood));
+  EXPECT_TRUE(grid_.GetNeighborhood(0, 0, &neighborhood));
   EXPECT_EQ(3, neighborhood[0].size());
 }
 
