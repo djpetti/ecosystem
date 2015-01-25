@@ -30,15 +30,45 @@ class Grid {
   // x_size: Size in the x dimension.
   // y_size: Size in the y dimension.
   bool Initialize(int x_size, int y_size);
-  // Sets the occupant of a specific cell.
-  // x: The x coordinate of the index's location.
-  // y: The y coordinate of the index's location.
+  // Sets the occupant of a specific cell. nullptr is a valid thing to pass in
+  // here, although it's often a better idea to use PurgeNew instead.
+  // x: The x coordinate of the cells's location.
+  // y: The y coordinate of the cells's location.
   // occupant: The grid object to occupy this cell.
   bool SetOccupant(int x, int y, GridObject *occupant);
-  // x: The x coordinate of the index's location.
-  // y: The y coordinate of the index's location.
+  // Clears a cell of its occupant immediately, no updating required. This is
+  // necessary so that we can run it when an grid object gets destroyed in order
+  // to avoid dead pointers hanging around in the grid, however, its use should
+  // be minimized.
+  // x: The x coordinate of the location to purge.
+  // y: The y coordinate of the location to purge.
+  inline void ForcePurgeOccupant(int x, int y) {
+    grid_[x * x_size_ + y].Object = nullptr;
+  }
+  // x: The x coordinate of the cells's location.
+  // y: The y coordinate of the cells's location.
   // Returns: The occupant of the cell, or nullptr in case of failure.
   GridObject *GetOccupant(int x, int y);
+  // Clears any conflicted object that is pending insertion at this cell.
+  // x: The x coordinate of the cell's location.
+  // y: The y coordinate of the cell's location.
+  inline void PurgeConflict(int x, int y) {
+    grid_[x * x_size_ + y].ConflictedObject = nullptr;
+  }
+  // Clears an object that is pending insertion at this cell.
+  // x: The x coordinate of the cell.
+  // y: The y coordinate of the cell.
+  // object: This is compared to both the conflicted and pending slots in the
+  // cell, and the appropriate one will be cleared depending on which matches.
+  // Returns: false if none of them matched.
+  bool PurgeNew(int x, int y, GridObject *object);
+  // Allows the user to manually set the blacklist status on a cell.
+  // x: The x coordinate of the cell.
+  // y: The y coordinate of the cell.
+  // blacklist: The blacklist status to set.
+  inline void SetBlacklisted(int x, int y, bool blacklist) {
+    grid_[x * x_size_ + y].Blacklisted = blacklist;
+  }
   // Returns the occupants of the locations in the extended neighborhood around
   // a specific location. If levels is something other than one, it includes
   // items in each successive level around the neighborhood. The output argument
@@ -62,13 +92,30 @@ class Grid {
   bool MoveObject(int x, int y,
       const ::std::vector<MovementFactor> & factors,
       int *new_x, int *new_y, int levels = 1, int vision = -1);
+  // "Bakes" the state of the grid. Commits any new changes that were made since
+  // the last time this was called to the actual grid. Also un-blacklists all
+  // cells on the grid.
+  // Returns: false if any cell on the grid remains in a conflicted state. All
+  // conflicts must be resolved before running this.
+  bool Update();
+  // Populates two lists with the objects currently involved in conflicts on the
+  // grid.
+  // objects1: The first set of objects.
+  // objects2: The second set of objects. Each object in this vector is
+  // conflicted with the object at the same index in objects1.
+  void GetConflicted(::std::vector<GridObject *> *objects1,
+      ::std::vector<GridObject *> *objects2);
 
  private:
   // A structure for representing cells in the grid.
   struct Cell {
-    // A cell needs to keep track of at most two objects.
-    GridObject *Object1;
-    GridObject *Object2;
+    // The object that is currently occupying the cell.
+    GridObject *Object;
+    // This object gets filled in to temporarily hold the next occupant of
+    // the cell before Update() is run.
+    GridObject *NewObject;
+    // This object gets filled in if we have a conflict.
+    GridObject *ConflictedObject;
     // Whether we want to prevent things from moving here.
     bool Blacklisted;
   };
@@ -123,6 +170,11 @@ class Grid {
   // perceive it. A negative value means that there is no limit.
   void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
       int vision);
+  // Removes any cells for which the Blacklisted attribute is set to true from
+  // consideration.
+  // xs: The x coordinates of the cells to consider.
+  // ys: The y coordinates of the cells to consider.
+  void RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys);
 
   // Returns whether or not the underlying array is initialized.
   inline bool IsInitialized() {

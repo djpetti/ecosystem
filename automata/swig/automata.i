@@ -28,6 +28,7 @@ class Organism {
   void AddFactor(int x, int y, int strength, int visibility = -1);
   void AddFactorFromOrganism(Organism *organism, int strength,
       int visibility = -1);
+  bool DefaultConflictHandler(Organism *organism1, Organism *organism2);
 };
 
 class Grid {
@@ -35,4 +36,5 @@ class Grid {
   Grid();
   ~Grid();
   bool Initialize(int x_size, int y_size);
+  bool Update();
 };

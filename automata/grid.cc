@@ -32,8 +32,9 @@ bool Grid::Initialize(int x_size, int y_size) {
 
   // Set everything to a default initialization.
   for (int i = 0; i < x_size * y_size; ++i) {
-    grid_[i].Object1 = nullptr;
-    grid_[i].Object2 = nullptr;
+    grid_[i].Object = nullptr;
+    grid_[i].NewObject = nullptr;
+    grid_[i].ConflictedObject = nullptr;
     grid_[i].Blacklisted = false;
   }
 
@@ -46,7 +47,21 @@ bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
     return false;
   }
 
-  grid_[x * x_size_ + y].Object1 = occupant;
+  Cell *cell = &grid_[x * x_size_ + y];
+  if (!cell->NewObject || cell->NewObject == cell->Object) {
+    // No occupants.
+    cell->NewObject = occupant;
+  } else {
+    // We have a conflict.
+    if (!occupant) {
+      // Edge case: A null occupant does not result in a conflict.
+      return true;
+    }
+
+    cell->ConflictedObject = occupant;
+    // Blacklist this cell so that nothing else moves here.
+    cell->Blacklisted = true;
+  }
   return true;
 }
 
@@ -55,7 +70,28 @@ GridObject *Grid::GetOccupant(int x, int y) {
     return nullptr;
   }
 
-  return grid_[x * x_size_ + y].Object1;
+  return grid_[x * x_size_ + y].Object;
+}
+
+bool Grid::PurgeNew(int x, int y, GridObject *object) {
+  Cell *cell = &grid_[x * x_size_ + y];
+  if (cell->NewObject == object) {
+    if (cell->ConflictedObject) {
+      // Our conflict isn't a conflict anymore.
+      cell->NewObject = cell->ConflictedObject;
+      cell->ConflictedObject = nullptr;
+    } else {
+      cell->NewObject = nullptr;
+    }
+  } else if (cell->ConflictedObject == object) {
+    // We can quietly remove this conflict.
+    cell->ConflictedObject = nullptr;
+  } else {
+    // We couldn't match object.
+    return false;
+  }
+
+  return true;
 }
 
 bool Grid::GetNeighborhoodLocations(int x, int y,
@@ -157,6 +193,8 @@ bool Grid::MoveObject(int x, int y,
   // We want it to have the possibility of staying in the same place also.
   xs.push_back(x);
   ys.push_back(y);
+  // Remove blacklisted locations from consideration.
+  RemoveBlacklisted(&xs, &ys);
 
   double probabilities[8];
   CalculateProbabilities(visible_factors, xs, ys, probabilities);
@@ -264,19 +302,45 @@ void Grid::RemoveInvisible(int x, int y,
   }
 }
 
-/*void Grid::RemoveOccupied(::std::vector<int> *xs, ::std::vector<int> *ys) {
+void Grid::RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys) {
   ::std::vector<int> to_delete;
-  for (uint32_t i = 0; i < xs.size(); ++i) {
-    if (GetIndex((*xs)[i], (*ys)[i]) > 0) {
-      // This cell is already occupied.
+  for (uint32_t i = 0; i < xs->size(); ++i) {
+    if (grid_[(*xs)[i] * x_size_ + (*ys)[i]].Blacklisted) {
+      // This cell is blacklisted. Remove it from consideration.
       to_delete.push_back(i);
     }
   }
 
   for (auto index : to_delete) {
-    xs.erase(xs.begin() + index);
-    ys.erase(ys.begin() + index);
+    xs->erase(xs->begin() + index);
+    ys->erase(ys->begin() + index);
   }
-}*/
+}
+
+bool Grid::Update() {
+  for (int i = 0; i < x_size_ * y_size_; ++i) {
+    if (grid_[i].ConflictedObject) {
+      // We can't update if we still have unresolved conflicts.
+      return false;
+    }
+
+    grid_[i].Object = grid_[i].NewObject;
+    // Setting them both to be the same by default allows nullptr to be a valid
+    // thing to swap in.
+    grid_[i].Blacklisted = false;
+  }
+
+  return true;
+}
+
+void Grid::GetConflicted(::std::vector<GridObject *> *objects1,
+    ::std::vector<GridObject *> *objects2) {
+  for (int i = 0; i < x_size_ * y_size_; ++i) {
+    if (grid_[i].ConflictedObject) {
+      objects1->push_back(grid_[i].NewObject);
+      objects2->push_back(grid_[i].ConflictedObject);
+    }
+  }
+}
 
 } //  automata

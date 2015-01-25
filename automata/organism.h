@@ -54,6 +54,13 @@ class Organism : public GridObject {
     MovementFactor factor(organism, strength, visibility);
     factors_.push_back(factor);
   }
+  // A default handler for conflicts on the grid between two organisms. It
+  // resolves the conflict by forcing a random one of them to move again.
+  // organism1: The first organism involved in the conflict.
+  // organism2: The second organism involved in the conflict.
+  // Returns: false if it fails to update the position of the organism it is
+  // moving.
+  bool DefaultConflictHandler(Organism *organism1, Organism *organism2);
 
  private:
   // The set of movement factors on this grid that could possibly affect this
