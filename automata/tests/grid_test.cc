@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <vector>
 
 #include "automata/grid.h"
@@ -41,28 +43,31 @@ class GridTest : public ::testing::Test {
 };
 
 TEST_F(GridTest, OccupantTest) {
-  // Do SetIndex() and GetIndex() work?
+  // Do SetOccupant() and GetOccupant() work?
   EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
 
-  GridObject object(nullptr, 0, 0, 0);
+  GridObject object(&grid_, 0, 0, 0);
   EXPECT_TRUE(grid_.SetOccupant(0, 0, &object));
+  EXPECT_TRUE(grid_.Update());
   EXPECT_EQ(grid_.GetOccupant(0, 0), &object);
 
   // Clear the grid again.
   ASSERT_TRUE(grid_.SetOccupant(0, 0, nullptr));
+  ASSERT_TRUE(grid_.Update());
 }
 
 TEST_F(GridTest, NeighborhoodTest) {
   // Does getting the indices in a neighborhood work?
   // Set the extended neighborhood of the location in the middle of the grid to
   // be all ones.
-  GridObject object(nullptr, 0, 0, 0);
+  GridObject object(&grid_, 0, 0, 0);
   for (int i = 5; i <= 7; ++i) {
     ASSERT_TRUE(grid_.SetOccupant(i, 5, &object));
     ASSERT_TRUE(grid_.SetOccupant(i, 7, &object));
   }
   ASSERT_TRUE(grid_.SetOccupant(5, 6, &object));
   ASSERT_TRUE(grid_.SetOccupant(7, 6, &object));
+  ASSERT_TRUE(grid_.Update());
 
   ::std::vector<::std::vector<GridObject *> > neighborhood;
   EXPECT_TRUE(grid_.GetNeighborhood(6, 6, &neighborhood));

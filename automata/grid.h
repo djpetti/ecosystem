@@ -182,7 +182,7 @@ class Grid {
   }
 
   // Whether or not the underlying array is initialized.
-  bool initialized_;
+  bool initialized_ = false;
   // The dimensions of the grid.
   int x_size_;
   int y_size_;

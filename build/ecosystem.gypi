@@ -5,6 +5,8 @@
       '-Werror',
       '-Wall',
       '-fPIC',
+      '-g',
+      '-O0',
     ],
     'include_dirs': [
       '<(DEPTH)/',
