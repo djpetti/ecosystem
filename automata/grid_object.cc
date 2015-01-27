@@ -6,7 +6,9 @@ GridObject::GridObject(Grid *grid, int index, int x, int y) :
     x_(x),
     y_(y),
     index_(index),
-    grid_(grid) {}
+    grid_(grid) {
+  grid_->SetOccupant(x_, y_, this);
+}
 
 GridObject::~GridObject() {
   if (grid_->GetOccupant(x_, y_) != this) {
@@ -29,14 +31,30 @@ bool GridObject::SetPosition(int x, int y) {
     }
   } else {
     // The grid has been updated.
-    if (!grid_->SetOccupant(x_, y_, nullptr)) {
-      return false;
-    }
+    grid_->SetOccupant(x_, y_, nullptr);
+    last_x_ = x_;
+    last_y_ = y_;
   }
 
   x_ = x;
   y_ = y;
-  return grid_->SetOccupant(x_, y_, this);
+  grid_->SetOccupant(x_, y_, this);
+
+  return true;
+}
+
+void GridObject::GetBakedPosition(int *x, int *y) {
+  if (grid_->GetOccupant(last_x_, last_y_) != this) {
+    // The grid has been updated, meaning that our current positions are the
+    // baked ones insted of our previous positions.
+    *x = x_;
+    *y = y_;
+  } else {
+    // The grid hasn't been updated, meaning hat our current positions are
+    // as-of-yet unbaked.
+    *x = last_x_;
+    *y = last_y_;
+  }
 }
 
 } //  automata

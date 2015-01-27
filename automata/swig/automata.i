@@ -33,8 +33,7 @@ class Organism {
 
 class Grid {
  public:
-  Grid();
+  Grid(int x_size, int y_size);
   ~Grid();
-  bool Initialize(int x_size, int y_size);
   bool Update();
 };

@@ -23,19 +23,26 @@ class GridObject {
   // Set the position of the object.
   // x: The x coordinate of the object's position.
   // y: The y coordinate of the object's position.
-  virtual bool SetPosition(int x, int y);
-  // Get the object's current position.
+  bool SetPosition(int x, int y);
+  // Get the object's current position, or planned position if the grid hasn't
+  // been updated yet.
   // x: Set to the x coordinate.
   // y: Set to the y coordinate.
-  inline virtual void GetPosition(int *x, int *y) {
+  inline void GetPosition(int *x, int *y) {
     *x = x_;
     *y = y_;
   }
+  // Gets the "true" position of the object. Will return where the object
+  // technically still is even if its slated to move somewhere else on the next
+  // grid update.
+  // x: Set to the x coordinate.
+  // y: Set to the y coordinate.
+  void GetBakedPosition(int *x, int *y);
 
  protected:
-  // x and y coordinates of the object's position, index of the object in the
-  // Python code.
-  int x_, y_, index_;
+  // x and y coordinates of the object's position, present and past, index of
+  // the object in the Python code.
+  int x_, y_, last_x_, last_y_, index_;
   // The grid that this object exists on.
   Grid *grid_;
 };

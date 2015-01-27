@@ -12,9 +12,7 @@ namespace testing {
 
 class GridTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {
-    ASSERT_TRUE(grid_.Initialize(9, 9));
-  }
+  GridTest() : grid_(9, 9) {}
 
   inline void TestCalculateProbabilities(
       ::std::vector<MovementFactor> & factors,
@@ -47,12 +45,11 @@ TEST_F(GridTest, OccupantTest) {
   EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
 
   GridObject object(&grid_, 0, 0, 0);
-  EXPECT_TRUE(grid_.SetOccupant(0, 0, &object));
   EXPECT_TRUE(grid_.Update());
   EXPECT_EQ(grid_.GetOccupant(0, 0), &object);
 
   // Clear the grid again.
-  ASSERT_TRUE(grid_.SetOccupant(0, 0, nullptr));
+  grid_.SetOccupant(0, 0, nullptr);
   ASSERT_TRUE(grid_.Update());
 }
 
@@ -62,11 +59,11 @@ TEST_F(GridTest, NeighborhoodTest) {
   // be all ones.
   GridObject object(&grid_, 0, 0, 0);
   for (int i = 5; i <= 7; ++i) {
-    ASSERT_TRUE(grid_.SetOccupant(i, 5, &object));
-    ASSERT_TRUE(grid_.SetOccupant(i, 7, &object));
+    grid_.SetOccupant(i, 5, &object);
+    grid_.SetOccupant(i, 7, &object);
   }
-  ASSERT_TRUE(grid_.SetOccupant(5, 6, &object));
-  ASSERT_TRUE(grid_.SetOccupant(7, 6, &object));
+  grid_.SetOccupant(5, 6, &object);
+  grid_.SetOccupant(7, 6, &object);
   ASSERT_TRUE(grid_.Update());
 
   ::std::vector<::std::vector<GridObject *> > neighborhood;

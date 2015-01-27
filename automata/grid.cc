@@ -1,6 +1,6 @@
+#include <assert.h>
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h> // TEMP
 #include <stdlib.h>
 #include <time.h>
 
@@ -10,25 +10,13 @@
 
 namespace automata {
 
-Grid::Grid() :
-    grid_(nullptr) {
+Grid::Grid(int x_size, int y_size) :
+    x_size_(x_size),
+    y_size_(y_size),
+    grid_(new Cell[x_size * y_size]) {
   srand(time(NULL));
-}
 
-Grid::~Grid() {
-  if (grid_) {
-    delete[] grid_;
-  }
-}
-
-bool Grid::Initialize(int x_size, int y_size) {
-  x_size_ = x_size;
-  y_size_ = y_size;
-
-  grid_ = new Cell[x_size * y_size];
-  if (!grid_) {
-    return false;
-  }
+  assert(grid_ && "Failed to allocate grid array!\n");
 
   // Set everything to a default initialization.
   for (int i = 0; i < x_size * y_size; ++i) {
@@ -37,16 +25,15 @@ bool Grid::Initialize(int x_size, int y_size) {
     grid_[i].ConflictedObject = nullptr;
     grid_[i].Blacklisted = false;
   }
-
-  initialized_ = true;
-  return true;
 }
 
-bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
-  if (!IsInitialized()) {
-    return false;
+Grid::~Grid() {
+  if (grid_) {
+    delete[] grid_;
   }
+}
 
+void Grid::SetOccupant(int x, int y, GridObject *occupant) {
   Cell *cell = &grid_[x * x_size_ + y];
   if (!cell->NewObject || cell->NewObject == cell->Object) {
     // No occupants.
@@ -55,22 +42,13 @@ bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
     // We have a conflict.
     if (!occupant) {
       // Edge case: A null occupant does not result in a conflict.
-      return true;
+      return;
     }
 
     cell->ConflictedObject = occupant;
     // Blacklist this cell so that nothing else moves here.
     cell->Blacklisted = true;
   }
-  return true;
-}
-
-GridObject *Grid::GetOccupant(int x, int y) {
-  if (!IsInitialized()) {
-    return nullptr;
-  }
-
-  return grid_[x * x_size_ + y].Object;
 }
 
 bool Grid::PurgeNew(int x, int y, GridObject *object) {
@@ -96,10 +74,6 @@ bool Grid::PurgeNew(int x, int y, GridObject *object) {
 
 bool Grid::GetNeighborhoodLocations(int x, int y,
     ::std::vector<int> *xs, ::std::vector<int> *ys, int levels/* = 1*/) {
-  if (!IsInitialized()) {
-    return false;
-  }
-
   if (x < 0 || y < 0 || x >= x_size_ || y >= y_size_) {
     // The starting point isn't within the bounds of the grid.
     return false;
@@ -270,7 +244,7 @@ void Grid::DoMovement(const double *probabilities,
       static_cast<double>(RAND_MAX);
 
   // Count up until we're above it.
-  double running_total;
+  double running_total = 0;
   for (int i = 0; i < 8; ++i) {
     running_total += probabilities[i];
     if (running_total >= random) {

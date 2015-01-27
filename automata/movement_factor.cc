@@ -27,7 +27,9 @@ bool MovementFactor::SetX(int x) {
 
 int MovementFactor::GetX() {
   if (organism_) {
-    organism_->GetPosition(&x_, &y_);
+    // We want the baked position, so that new changes to the grid don't
+    // influence the ones that follow.
+    organism_->GetBakedPosition(&x_, &y_);
   }
 
   return x_;
@@ -43,7 +45,7 @@ bool MovementFactor::SetY(int y) {
 
 int MovementFactor::GetY() {
   if (organism_) {
-    organism_->GetPosition(&x_, &y_);
+    organism_->GetBakedPosition(&x_, &y_);
   }
 
   return y_;

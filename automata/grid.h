@@ -10,6 +10,12 @@
 // indices into a list in the Python code, which contains the actual data on
 // each grid location.
 
+// NOTE: Most of the public methods in this class, with the exception of
+// Update(), are really intended to be used only by instances of GridObject and
+// its derivatives. Assumptions are made elsewhere that this is the case, so if
+// you choose to not follow this paradigm, you risk breaking things in an
+// unexpected way.
+
 namespace automata {
 
 namespace testing {
@@ -23,19 +29,17 @@ class GridObject;
 class Grid {
   friend class testing::GridTest;
  public:
-  Grid();
-  ~Grid();
-
-  // Initializes the grid with the specified parameters.
   // x_size: Size in the x dimension.
   // y_size: Size in the y dimension.
-  bool Initialize(int x_size, int y_size);
+  Grid(int x_size, int y_size);
+  ~Grid();
+
   // Sets the occupant of a specific cell. nullptr is a valid thing to pass in
   // here, although it's often a better idea to use PurgeNew instead.
   // x: The x coordinate of the cells's location.
   // y: The y coordinate of the cells's location.
   // occupant: The grid object to occupy this cell.
-  bool SetOccupant(int x, int y, GridObject *occupant);
+  void SetOccupant(int x, int y, GridObject *occupant);
   // Clears a cell of its occupant immediately, no updating required. This is
   // necessary so that we can run it when an grid object gets destroyed in order
   // to avoid dead pointers hanging around in the grid, however, its use should
@@ -47,8 +51,10 @@ class Grid {
   }
   // x: The x coordinate of the cells's location.
   // y: The y coordinate of the cells's location.
-  // Returns: The occupant of the cell, or nullptr in case of failure.
-  GridObject *GetOccupant(int x, int y);
+  // Returns: The occupant of the cell, or nullptr if that cell has no occupant.
+  inline GridObject *GetOccupant(int x, int y) {
+    return grid_[x * x_size_ + y].Object;
+  }
   // Clears any conflicted object that is pending insertion at this cell.
   // x: The x coordinate of the cell's location.
   // y: The y coordinate of the cell's location.
