@@ -26,24 +26,12 @@ class MovementFactor {
   int GetX();
   bool SetY(int y);
   int GetY();
-  inline void SetStrength(int strength) {
-    strength_ = strength;
-  }
-  inline int GetStrength() {
-    return strength_;
-  }
-  void SetVisibility(int visibility) {
-    visibility_ = visibility;
-  }
-  int GetVisibility() {
-    return visibility_;
-  }
-  void SetOrganism(Organism *organism) {
-    organism_ = organism;
-  }
-  Organism *GetOrgansim() {
-    return organism_;
-  }
+  inline void SetStrength(int strength) { strength_ = strength; }
+  inline int GetStrength() { return strength_; }
+  void SetVisibility(int visibility) { visibility_ = visibility; }
+  int GetVisibility() { return visibility_; }
+  void SetOrganism(Organism *organism) { organism_ = organism; }
+  Organism *GetOrgansim() { return organism_; }
 
   // Returns the distance between this factor and a location. Basically does the
   // distance formula.
@@ -66,6 +54,6 @@ class MovementFactor {
   Organism *organism_ = nullptr;
 };
 
-} //  automata
+}  //  automata
 
 #endif

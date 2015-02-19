@@ -5,10 +5,7 @@
 
 #include "automata/movement_factor.h"
 
-// Defines functions for dealing with the grid at a low level. The way the grid
-// works is that the C++ code populates its representation of the grid with
-// indices into a list in the Python code, which contains the actual data on
-// each grid location.
+// Defines functions for dealing with the grid at a low level.
 
 // NOTE: Most of the public methods in this class, with the exception of
 // Update(), are really intended to be used only by instances of GridObject and
@@ -20,17 +17,15 @@ namespace automata {
 
 namespace testing {
 // Forward declaration for testing.
-// TODO(danielp): Do this correctly.
-class GridTest;
-} //  testing
+class AutomataTest_MotionTest_Test;
+class AutomataTest_MotionFactorsTest_Test;
+}  //  namespace testing
 
 // Forward declaration of GridObject to break circular dependency.
 class GridObject;
 
 class Grid {
-  friend class testing::GridTest;
-
-public:
+ public:
   // x_size: Size in the x dimension.
   // y_size: Size in the y dimension.
   Grid(int x_size, int y_size);
@@ -136,7 +131,10 @@ public:
   void GetConflicted(::std::vector<GridObject *> *objects1,
                      ::std::vector<GridObject *> *objects2);
 
-private:
+ private:
+  friend class testing::AutomataTest_MotionTest_Test;
+  friend class testing::AutomataTest_MotionFactorsTest_Test;
+
   // A structure for representing cells in the grid.
   struct Cell {
     // The object that is currently occupying the cell.
@@ -218,6 +216,6 @@ private:
   Cell *grid_;
 };
 
-} // automata
+}  // namespace automata
 
 #endif

@@ -8,40 +8,18 @@
 namespace automata {
 namespace testing {
 
-class GridTest : public ::testing::Test {
+// The components of automata are pretty intertwined, and it's hard to test them
+// individually, so this file contains unit tests for pretty much every
+// component of the automata library.
+
+class AutomataTest : public ::testing::Test {
  protected:
-  GridTest() : grid_(9, 9) {}
-
-  inline void TestCalculateProbabilities(::std::vector<MovementFactor> &factors,
-                                         const ::std::vector<int> &xs,
-                                         const ::std::vector<int> &ys,
-                                         double *probabilities) {
-    grid_.CalculateProbabilities(factors, xs, ys, probabilities);
-  }
-
-  inline void TestDoMovement(const double *probabilities,
-                             const ::std::vector<int> &xs,
-                             const ::std::vector<int> &ys, int *new_x,
-                             int *new_y) {
-    grid_.DoMovement(probabilities, xs, ys, new_x, new_y);
-  }
-
-  inline void TestGetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
-                                           ::std::vector<int> *ys,
-                                           int levels = 1) {
-    EXPECT_TRUE(grid_.GetNeighborhoodLocations(x, y, xs, ys, levels));
-  }
-
-  inline void TestRemoveInvisible(int x, int y,
-                                  ::std::vector<MovementFactor> *factors,
-                                  int vision) {
-    grid_.RemoveInvisible(x, y, factors, vision);
-  }
+  AutomataTest() : grid_(9, 9) {}
 
   Grid grid_;
 };
 
-TEST_F(GridTest, OccupantTest) {
+TEST_F(AutomataTest, OccupantTest) {
   // Do SetOccupant() and GetOccupant() work?
   EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
 
@@ -55,7 +33,7 @@ TEST_F(GridTest, OccupantTest) {
   ASSERT_TRUE(grid_.Update());
 }
 
-TEST_F(GridTest, NeighborhoodTest) {
+TEST_F(AutomataTest, NeighborhoodTest) {
   // Does getting the indices in a neighborhood work?
   // Set the extended neighborhood of the location in the middle of the grid to
   // be all ones.
@@ -79,7 +57,7 @@ TEST_F(GridTest, NeighborhoodTest) {
   }
 }
 
-TEST_F(GridTest, OutOfBoundsTest) {
+TEST_F(AutomataTest, OutOfBoundsTest) {
   // Does GetNeighborhood deal properly with out-of-bounds input?
   ::std::vector<::std::vector<GridObject *>> neighborhood;
   // Giving it a starting point outside the boundaries of the grid should make
@@ -90,7 +68,7 @@ TEST_F(GridTest, OutOfBoundsTest) {
   EXPECT_EQ(3, neighborhood[0].size());
 }
 
-TEST_F(GridTest, MotionTest) {
+TEST_F(AutomataTest, MotionTest) {
   // Does DoMovement make a reasonable choice given the array of probabilities?
   // Make a probabilities array with only one possible choice.
   double probabilities[8];
@@ -101,23 +79,23 @@ TEST_F(GridTest, MotionTest) {
 
   // Use GetNeighborhoodLocations to generate xs and ys vectors.
   ::std::vector<int> xs, ys;
-  TestGetNeighborhoodLocations(1, 1, &xs, &ys);
+  grid_.GetNeighborhoodLocations(1, 1, &xs, &ys);
 
   int new_x, new_y;
-  TestDoMovement(probabilities, xs, ys, &new_x, &new_y);
+  grid_.DoMovement(probabilities, xs, ys, &new_x, &new_y);
   EXPECT_EQ(xs[0], new_x);
   EXPECT_EQ(ys[0], new_y);
 }
 
-TEST_F(GridTest, MotionFactorsTest) {
+TEST_F(AutomataTest, MotionFactorsTest) {
   // Do movement factors influence probabilities the way we would expect?
   ::std::vector<MovementFactor> factors;
   double probabilities[8];
   ::std::vector<int> xs, ys;
-  TestGetNeighborhoodLocations(1, 1, &xs, &ys);
+  grid_.GetNeighborhoodLocations(1, 1, &xs, &ys);
 
   // No factors should lead to equal probability for every location.
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_EQ(probabilities[0], probabilities[i]);
   }
@@ -125,7 +103,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   // A factor with a strength of zero should have the same effect.
   MovementFactor factor(0, 0, 0, -1);
   factors.push_back(factor);
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_EQ(probabilities[0], probabilities[i]);
   }
@@ -133,7 +111,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   // An attractive factor in the neighborhood should lead to a high probability
   // for its location.
   factors[0].SetStrength(100);
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_GT(probabilities[0], probabilities[i]);
   }
@@ -144,7 +122,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   factor.SetY(2);
   factor.SetStrength(100);
   factors.push_back(factor);
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   // The two poles.
   EXPECT_EQ(probabilities[5], probabilities[0]);
   for (int i = 1; i < 8; ++i) {
@@ -156,7 +134,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   // A repulsive factor in the neighborhood should do the opposite.
   factors.pop_back();
   factors[0].SetStrength(-100);
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_LT(probabilities[0], probabilities[i]);
   }
@@ -166,7 +144,7 @@ TEST_F(GridTest, MotionFactorsTest) {
   factors[0].SetX(3);
   factors[0].SetY(1);
   factors[0].SetStrength(100);
-  TestCalculateProbabilities(factors, xs, ys, probabilities);
+  grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 7; ++i) {
     EXPECT_GT(probabilities[7], probabilities[i]);
   }
@@ -175,16 +153,16 @@ TEST_F(GridTest, MotionFactorsTest) {
   // low enough.
   auto invisible_factors = factors;
   invisible_factors[0].SetVisibility(1);
-  TestRemoveInvisible(1, 1, &invisible_factors, -1);
+  grid_.RemoveInvisible(1, 1, &invisible_factors, -1);
   EXPECT_TRUE(invisible_factors.empty());
 
   // We should also get this same result if we set the organism's vision low
   // enough.
-  TestRemoveInvisible(1, 1, &factors, 1);
+  grid_.RemoveInvisible(1, 1, &factors, 1);
   EXPECT_TRUE(factors.empty());
 }
 
-TEST_F(GridTest, UpdateAndConflictTest) {
+TEST_F(AutomataTest, UpdateAndConflictTest) {
   // Does the grid handle conflicts and updating correctly?
   GridObject object1(&grid_, 0);
   GridObject object2(&grid_, 1);
@@ -222,7 +200,7 @@ TEST_F(GridTest, UpdateAndConflictTest) {
 }
 
 // Do GetPosition and GetBakedPosition work as planned?
-TEST_F(GridTest, PositioningTest) {
+TEST_F(AutomataTest, PositioningTest) {
   GridObject object1(&grid_, 0);
   GridObject object2(&grid_, 1);
   ASSERT_TRUE(object1.Initialize(2, 2));
