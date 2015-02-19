@@ -19,8 +19,9 @@
 namespace automata {
 
 namespace testing {
-  // Forward declaration for testing.
-  class GridTest;
+// Forward declaration for testing.
+// TODO(danielp): Do this correctly.
+class GridTest;
 } //  testing
 
 // Forward declaration of GridObject to break circular dependency.
@@ -28,32 +29,52 @@ class GridObject;
 
 class Grid {
   friend class testing::GridTest;
- public:
+
+public:
   // x_size: Size in the x dimension.
   // y_size: Size in the y dimension.
   Grid(int x_size, int y_size);
   ~Grid();
 
   // Sets the occupant of a specific cell. nullptr is a valid thing to pass in
-  // here, although it's often a better idea to use PurgeNew instead.
-  // x: The x coordinate of the cells's location.
-  // y: The y coordinate of the cells's location.
+  // here. Passing nullptr does not generate conflicts. It will make this cell
+  // vacant the next time Update() is called. If any objects are pending
+  // insertion, they will override the nullptr. Passing the cell's current
+  // occupant does not do anything. If you really want to do that, check out
+  // PurgeNew().
+  // x: The x coordinate of the cell's location.
+  // y: The y coordinate of the cell's location.
   // occupant: The grid object to occupy this cell.
-  void SetOccupant(int x, int y, GridObject *occupant);
+  // Returns: true if the pending object was set correctly, false if there was a
+  // conflict, or if you were trying to run this method on a blacklisted cell.
+  bool SetOccupant(int x, int y, GridObject *occupant);
   // Clears a cell of its occupant immediately, no updating required. This is
   // necessary so that we can run it when an grid object gets destroyed in order
-  // to avoid dead pointers hanging around in the grid, however, its use should
-  // be minimized.
+  // to avoid dead pointers hanging around in the grid, however, its use for
+  // everyday operations should be absolutely minimized.
   // x: The x coordinate of the location to purge.
   // y: The y coordinate of the location to purge.
   inline void ForcePurgeOccupant(int x, int y) {
     grid_[x * x_size_ + y].Object = nullptr;
   }
-  // x: The x coordinate of the cells's location.
-  // y: The y coordinate of the cells's location.
+  // x: The x coordinate of the cell's location.
+  // y: The y coordinate of the cell's location.
   // Returns: The occupant of the cell, or nullptr if that cell has no occupant.
   inline GridObject *GetOccupant(int x, int y) {
     return grid_[x * x_size_ + y].Object;
+  }
+  // Gets any occupant pending insertion at this cell.
+  // x: The x coordinate of the cell's location.
+  // y: The y coordinate of the cell's location.
+  // Returns: The occupant pending insertion at this cell, or nullptr if none
+  // is.
+  GridObject *GetPending(int x, int y);
+  // Gets any occupant currently in the conflicted slot at this cell.
+  // x: The x coordinate of the cell's location.
+  // y: The y coordinate of the cell's location.
+  // Returns: The contents of the cell's conflicted slot.
+  inline GridObject *GetConflict(int x, int y) {
+    return grid_[x * x_size_ + y].ConflictedObject;
   }
   // Clears any conflicted object that is pending insertion at this cell.
   // x: The x coordinate of the cell's location.
@@ -61,13 +82,16 @@ class Grid {
   inline void PurgeConflict(int x, int y) {
     grid_[x * x_size_ + y].ConflictedObject = nullptr;
   }
-  // Clears an object that is pending insertion at this cell.
+  // Clears an object that is pending insertion at this cell. It will not
+  // generate conflicts. Will clear anything pending insertion, including
+  // nullptr. If object matches the conflicted object instead of the one pending
+  // insertion, it will clear the conflicted slot instead.
   // x: The x coordinate of the cell.
   // y: The y coordinate of the cell.
-  // object: This is compared to both the conflicted and pending slots in the
-  // cell, and the appropriate one will be cleared depending on which matches.
-  // Returns: false if none of them matched.
-  bool PurgeNew(int x, int y, GridObject *object);
+  // object: The object to clear from the cell.
+  // Returns: true if it cleared something, false if object did not match
+  // anything.
+  bool PurgeNew(int x, int y, const GridObject *object);
   // Allows the user to manually set the blacklist status on a cell.
   // x: The x coordinate of the cell.
   // y: The y coordinate of the cell.
@@ -82,7 +106,8 @@ class Grid {
   // indices in the neighborbood for one level. The subvectors are organized in
   // ascending order by level.
   bool GetNeighborhood(int x, int y,
-      ::std::vector<::std::vector<GridObject *> > *objects, int levels = 1);
+                       ::std::vector< ::std::vector<GridObject *> > *objects,
+                       int levels = 1);
   // Takes a vector of movement factors, and chooses a location for a grid
   // object to move to.
   // x: x coordinate of the organism's current position.
@@ -95,9 +120,8 @@ class Grid {
   // we could move. See GetNeighborhood for an explanation of levels.
   // vision: The maximum number of cells we can be from any factor and still
   // perceive it.
-  bool MoveObject(int x, int y,
-      const ::std::vector<MovementFactor> & factors,
-      int *new_x, int *new_y, int levels = 1, int vision = -1);
+  bool MoveObject(int x, int y, const ::std::vector<MovementFactor> &factors,
+                  int *new_x, int *new_y, int levels = 1, int vision = -1);
   // "Bakes" the state of the grid. Commits any new changes that were made since
   // the last time this was called to the actual grid. Also un-blacklists all
   // cells on the grid.
@@ -110,9 +134,9 @@ class Grid {
   // objects2: The second set of objects. Each object in this vector is
   // conflicted with the object at the same index in objects1.
   void GetConflicted(::std::vector<GridObject *> *objects1,
-      ::std::vector<GridObject *> *objects2);
+                     ::std::vector<GridObject *> *objects2);
 
- private:
+private:
   // A structure for representing cells in the grid.
   struct Cell {
     // The object that is currently occupying the cell.
@@ -134,9 +158,10 @@ class Grid {
   // ys: The y coordinates of the locations in the neighborhood.
   // probabilities: an array of probability values. Should be an array capable
   // of holding a number of items equal to the size of the xs and ys vectors.
-  void CalculateProbabilities(::std::vector<MovementFactor> & factors,
-      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-      double *probabilities);
+  void CalculateProbabilities(::std::vector<MovementFactor> &factors,
+                              const ::std::vector<int> &xs,
+                              const ::std::vector<int> &ys,
+                              double *probabilities);
   // Gets the locations that are in a neighborhood.
   // If any locations that should be in the neighborhood are outside the bounds
   // of the grid, they will not be included.
@@ -152,8 +177,8 @@ class Grid {
   // surrounding them. etc.
   // Returns: true if it succeeds, false if the grid is not initialized, or if
   // the neighborhood would be out of its bounds.
-  bool GetNeighborhoodLocations(int x, int y,
-      ::std::vector<int> *xs, ::std::vector<int> *ys, int levels = 1);
+  bool GetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
+                                ::std::vector<int> *ys, int levels = 1);
   // Takes a set of probabilities, and uses them to calculate where an object
   // should move in its neighborhood.
   // probabilities: The array of probabilities for each location, generally
@@ -164,9 +189,8 @@ class Grid {
   // same one as was passed to CalculateProbabilities.
   // new_x: The x coordinate of the organism's new location.
   // new_y: The y coordinate of the organism's new location.
-  void DoMovement(const double *probabilities,
-      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-      int *new_x, int *new_y);
+  void DoMovement(const double *probabilities, const ::std::vector<int> &xs,
+                  const ::std::vector<int> &ys, int *new_x, int *new_y);
   // Looks at factor visibilities and removes any that are not visible to the
   // object.
   // x: The x coordinate of the objects's position.
@@ -175,7 +199,7 @@ class Grid {
   // vision: Maximum distance we can be from a factor in cells, and still
   // perceive it. A negative value means that there is no limit.
   void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
-      int vision);
+                       int vision);
   // Removes any cells for which the Blacklisted attribute is set to true from
   // consideration.
   // xs: The x coordinates of the cells to consider.
@@ -183,9 +207,7 @@ class Grid {
   void RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys);
 
   // Returns whether or not the underlying array is initialized.
-  inline bool IsInitialized() {
-    return initialized_;
-  }
+  inline bool IsInitialized() { return initialized_; }
 
   // Whether or not the underlying array is initialized.
   bool initialized_ = false;
@@ -196,6 +218,6 @@ class Grid {
   Cell *grid_;
 };
 
-}  // automata
+} // automata
 
 #endif

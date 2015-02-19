@@ -5,17 +5,11 @@
 
 namespace automata {
 
-MovementFactor::MovementFactor(int x, int y, int strength, int visibility) :
-    x_(x),
-    y_(y),
-    strength_(strength),
-    visibility_(visibility) {}
+MovementFactor::MovementFactor(int x, int y, int strength, int visibility)
+    : x_(x), y_(y), strength_(strength), visibility_(visibility) {}
 
-MovementFactor::MovementFactor(Organism *organism, int strength,
-    int visibility) :
-    strength_(strength),
-    visibility_(visibility),
-    organism_(organism) {}
+MovementFactor::MovementFactor(Organism *organism, int strength, int visibility)
+    : strength_(strength), visibility_(visibility), organism_(organism) {}
 
 bool MovementFactor::SetX(int x) {
   if (organism_) {
@@ -55,4 +49,4 @@ double MovementFactor::GetDistance(int x, int y) {
   return pow(pow(x_ - x, 2) + pow(y_ - y, 2), 0.5);
 }
 
-} //  automata
+}  //  automata

@@ -10,10 +10,8 @@
 
 namespace automata {
 
-Grid::Grid(int x_size, int y_size) :
-    x_size_(x_size),
-    y_size_(y_size),
-    grid_(new Cell[x_size * y_size]) {
+Grid::Grid(int x_size, int y_size)
+    : x_size_(x_size), y_size_(y_size), grid_(new Cell[x_size * y_size]) {
   srand(time(NULL));
 
   assert(grid_ && "Failed to allocate grid array!\n");
@@ -27,53 +25,76 @@ Grid::Grid(int x_size, int y_size) :
   }
 }
 
-Grid::~Grid() {
-  if (grid_) {
-    delete[] grid_;
-  }
-}
+Grid::~Grid() { delete[] grid_; }
 
-void Grid::SetOccupant(int x, int y, GridObject *occupant) {
+bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
   Cell *cell = &grid_[x * x_size_ + y];
+  if (cell->Blacklisted) {
+    if (!occupant || occupant == cell->Object || occupant == cell->NewObject) {
+      // We wouldn't do anything anyway in these cases, so this is not a
+      // failure.
+      return true;
+    }
+    // We can't really put something on a blacklisted cell.
+    return false;
+  }
+
   if (!cell->NewObject || cell->NewObject == cell->Object) {
     // No occupants.
+    assert(!cell->ConflictedObject && "Found conflict on vacant cell.");
     cell->NewObject = occupant;
   } else {
     // We have a conflict.
-    if (!occupant) {
-      // Edge case: A null occupant does not result in a conflict.
-      return;
+    if (!occupant || occupant == cell->Object || occupant == cell->NewObject) {
+      // Setting NewObject to the same thing over again, or to the same thing as
+      // Object is not a failure, but doesn't do anything. Same with setting it
+      // to nullptr if it's already occupied.
+      return true;
     }
 
     cell->ConflictedObject = occupant;
     // Blacklist this cell so that nothing else moves here.
     cell->Blacklisted = true;
-  }
-}
-
-bool Grid::PurgeNew(int x, int y, GridObject *object) {
-  Cell *cell = &grid_[x * x_size_ + y];
-  if (cell->NewObject == object) {
-    if (cell->ConflictedObject) {
-      // Our conflict isn't a conflict anymore.
-      cell->NewObject = cell->ConflictedObject;
-      cell->ConflictedObject = nullptr;
-    } else {
-      cell->NewObject = nullptr;
-    }
-  } else if (cell->ConflictedObject == object) {
-    // We can quietly remove this conflict.
-    cell->ConflictedObject = nullptr;
-  } else {
-    // We couldn't match object.
     return false;
   }
 
   return true;
 }
 
-bool Grid::GetNeighborhoodLocations(int x, int y,
-    ::std::vector<int> *xs, ::std::vector<int> *ys, int levels/* = 1*/) {
+bool Grid::PurgeNew(int x, int y, const GridObject *object) {
+  Cell *cell = &grid_[x * x_size_ + y];
+  if (object == cell->NewObject) {
+    if (cell->ConflictedObject) {
+      // Our conflict isn't a conflict anymore.
+      cell->NewObject = cell->ConflictedObject;
+      cell->ConflictedObject = nullptr;
+    } else {
+      cell->NewObject = cell->Object;
+    }
+  } else if (object == cell->ConflictedObject) {
+    // Remove conflicted object.
+    cell->ConflictedObject = nullptr;
+  } else {
+    // Could not find object.
+    return false;
+  }
+
+  return true;
+}
+
+GridObject *Grid::GetPending(int x, int y) {
+  const Cell *cell = &grid_[x * x_size_ + y];
+  if (cell->NewObject == cell->Object) {
+    // Technically, there is nothing pending insertion here.
+    return nullptr;
+  }
+
+  return cell->NewObject;
+}
+
+bool Grid::GetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
+                                    ::std::vector<int> *ys,
+                                    int levels /* = 1*/) {
   if (x < 0 || y < 0 || x >= x_size_ || y >= y_size_) {
     // The starting point isn't within the bounds of the grid.
     return false;
@@ -126,8 +147,9 @@ bool Grid::GetNeighborhoodLocations(int x, int y,
   return true;
 }
 
-bool Grid::GetNeighborhood(int x, int y,
-    ::std::vector<::std::vector<GridObject *> > *objects, int levels/* = 1*/) {
+bool Grid::GetNeighborhood(
+    int x, int y, ::std::vector< ::std::vector<GridObject *> > *objects,
+    int levels /* = 1*/) {
   objects->clear();
 
   ::std::vector<int> xs, ys;
@@ -155,8 +177,8 @@ bool Grid::GetNeighborhood(int x, int y,
 }
 
 bool Grid::MoveObject(int x, int y,
-    const ::std::vector<MovementFactor> & factors,
-    int *new_x, int *new_y, int levels/* = 1*/, int vision/* = -1*/) {
+                      const ::std::vector<MovementFactor> &factors, int *new_x,
+                      int *new_y, int levels /* = 1*/, int vision /* = -1*/) {
   ::std::vector<MovementFactor> visible_factors = factors;
   RemoveInvisible(x, y, &visible_factors, vision);
 
@@ -178,11 +200,12 @@ bool Grid::MoveObject(int x, int y,
   return true;
 }
 
-void Grid::CalculateProbabilities(::std::vector<MovementFactor> & factors,
-    const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-    double *probabilities) {
+void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
+                                  const ::std::vector<int> &xs,
+                                  const ::std::vector<int> &ys,
+                                  double *probabilities) {
   int total_strength = 0;
-  for (auto & factor : factors) {
+  for (auto &factor : factors) {
     // There is an edge case where all our factors could have a strength of
     // zero.
     total_strength += factor.GetStrength();
@@ -203,7 +226,7 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> & factors,
 
   // Calculate how far each factor is from each location and use it to change
   // the probabilities.
-  for (auto & factor : factors) {
+  for (auto &factor : factors) {
     for (uint32_t i = 0; i < xs.size(); ++i) {
       const double radius = factor.GetDistance(xs[i], ys[i]);
 
@@ -236,12 +259,11 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> & factors,
   }
 }
 
-void Grid::DoMovement(const double *probabilities,
-    const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-    int *new_x, int *new_y) {
+void Grid::DoMovement(const double *probabilities, const ::std::vector<int> &xs,
+                      const ::std::vector<int> &ys, int *new_x, int *new_y) {
   // Get a random float that's somewhere between 0 and 1.
-  const double random = static_cast<double>(rand()) /
-      static_cast<double>(RAND_MAX);
+  const double random =
+      static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
 
   // Count up until we're above it.
   double running_total = 0;
@@ -258,14 +280,14 @@ void Grid::DoMovement(const double *probabilities,
   *new_y = ys[7];
 }
 
-void Grid::RemoveInvisible(int x, int y,
-    ::std::vector<MovementFactor> *factors, int vision) {
+void Grid::RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
+                           int vision) {
   ::std::vector<uint32_t> to_delete;
   for (uint32_t i = 0; i < factors->size(); ++i) {
     const double radius = (*factors)[i].GetDistance(x, y);
 
     if (((*factors)[i].GetVisibility() > 0 &&
-        radius > (*factors)[i].GetVisibility()) ||
+         radius > (*factors)[i].GetVisibility()) ||
         (vision > 0 && radius > vision)) {
       to_delete.push_back(i);
     }
@@ -308,7 +330,7 @@ bool Grid::Update() {
 }
 
 void Grid::GetConflicted(::std::vector<GridObject *> *objects1,
-    ::std::vector<GridObject *> *objects2) {
+                         ::std::vector<GridObject *> *objects2) {
   for (int i = 0; i < x_size_ * y_size_; ++i) {
     if (grid_[i].ConflictedObject) {
       objects1->push_back(grid_[i].NewObject);
@@ -317,4 +339,4 @@ void Grid::GetConflicted(::std::vector<GridObject *> *objects1,
   }
 }
 
-} //  automata
+}  //  automata

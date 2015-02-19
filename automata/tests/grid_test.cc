@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include <vector>
 
 #include "automata/grid.h"
@@ -14,26 +12,29 @@ class GridTest : public ::testing::Test {
  protected:
   GridTest() : grid_(9, 9) {}
 
-  inline void TestCalculateProbabilities(
-      ::std::vector<MovementFactor> & factors,
-      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-      double *probabilities) {
+  inline void TestCalculateProbabilities(::std::vector<MovementFactor> &factors,
+                                         const ::std::vector<int> &xs,
+                                         const ::std::vector<int> &ys,
+                                         double *probabilities) {
     grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   }
 
   inline void TestDoMovement(const double *probabilities,
-      const ::std::vector<int> & xs, const ::std::vector<int> & ys,
-      int *new_x, int *new_y) {
+                             const ::std::vector<int> &xs,
+                             const ::std::vector<int> &ys, int *new_x,
+                             int *new_y) {
     grid_.DoMovement(probabilities, xs, ys, new_x, new_y);
   }
 
-  inline void TestGetNeighborhoodLocations(int x, int y,
-      ::std::vector<int> *xs, ::std::vector<int> *ys, int levels = 1) {
+  inline void TestGetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
+                                           ::std::vector<int> *ys,
+                                           int levels = 1) {
     EXPECT_TRUE(grid_.GetNeighborhoodLocations(x, y, xs, ys, levels));
   }
 
   inline void TestRemoveInvisible(int x, int y,
-      ::std::vector<MovementFactor> *factors, int vision) {
+                                  ::std::vector<MovementFactor> *factors,
+                                  int vision) {
     grid_.RemoveInvisible(x, y, factors, vision);
   }
 
@@ -44,7 +45,8 @@ TEST_F(GridTest, OccupantTest) {
   // Do SetOccupant() and GetOccupant() work?
   EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
 
-  GridObject object(&grid_, 0, 0, 0);
+  GridObject object(&grid_, 0);
+  ASSERT_TRUE(object.Initialize(0, 0));
   EXPECT_TRUE(grid_.Update());
   EXPECT_EQ(grid_.GetOccupant(0, 0), &object);
 
@@ -57,7 +59,8 @@ TEST_F(GridTest, NeighborhoodTest) {
   // Does getting the indices in a neighborhood work?
   // Set the extended neighborhood of the location in the middle of the grid to
   // be all ones.
-  GridObject object(&grid_, 0, 0, 0);
+  GridObject object(&grid_, 0);
+  ASSERT_TRUE(object.Initialize(0, 0));
   for (int i = 5; i <= 7; ++i) {
     grid_.SetOccupant(i, 5, &object);
     grid_.SetOccupant(i, 7, &object);
@@ -66,7 +69,7 @@ TEST_F(GridTest, NeighborhoodTest) {
   grid_.SetOccupant(7, 6, &object);
   ASSERT_TRUE(grid_.Update());
 
-  ::std::vector<::std::vector<GridObject *> > neighborhood;
+  ::std::vector<::std::vector<GridObject *>> neighborhood;
   EXPECT_TRUE(grid_.GetNeighborhood(6, 6, &neighborhood));
   EXPECT_EQ(1, neighborhood.size());
 
@@ -78,7 +81,7 @@ TEST_F(GridTest, NeighborhoodTest) {
 
 TEST_F(GridTest, OutOfBoundsTest) {
   // Does GetNeighborhood deal properly with out-of-bounds input?
-  ::std::vector<::std::vector<GridObject *> > neighborhood;
+  ::std::vector<::std::vector<GridObject *>> neighborhood;
   // Giving it a starting point outside the boundaries of the grid should make
   // it fail.
   EXPECT_FALSE(grid_.GetNeighborhood(-1, -1, &neighborhood));
@@ -181,5 +184,83 @@ TEST_F(GridTest, MotionFactorsTest) {
   EXPECT_TRUE(factors.empty());
 }
 
-} //  testing
-} //  automata
+TEST_F(GridTest, UpdateAndConflictTest) {
+  // Does the grid handle conflicts and updating correctly?
+  GridObject object1(&grid_, 0);
+  GridObject object2(&grid_, 1);
+  ASSERT_TRUE(object1.Initialize(0, 0));
+  ASSERT_TRUE(object2.Initialize(1, 1));
+
+  // There should be no objects here yet.
+  EXPECT_EQ(nullptr, grid_.GetOccupant(0, 0));
+  EXPECT_EQ(nullptr, grid_.GetOccupant(1, 1));
+
+  EXPECT_TRUE(grid_.Update());
+
+  // Now there should be objects there.
+  EXPECT_EQ(&object1, grid_.GetOccupant(0, 0));
+  EXPECT_EQ(&object2, grid_.GetOccupant(1, 1));
+
+  // Make a conflict.
+  EXPECT_TRUE(object1.SetPosition(2, 2));
+  EXPECT_FALSE(object2.SetPosition(2, 2));
+
+  // Updating should not work now.
+  EXPECT_FALSE(grid_.Update());
+
+  // That didn't work, so there still shouldn't be anyone there.
+  EXPECT_EQ(nullptr, grid_.GetOccupant(2, 2));
+  EXPECT_EQ(nullptr, grid_.GetOccupant(2, 2));
+
+  // We can easily resolve the conflict, though.
+  EXPECT_TRUE(object2.SetPosition(0, 0));
+  EXPECT_TRUE(grid_.Update());
+
+  // Test that we have objects where we think we do.
+  EXPECT_EQ(&object1, grid_.GetOccupant(2, 2));
+  EXPECT_EQ(&object2, grid_.GetOccupant(0, 0));
+}
+
+// Do GetPosition and GetBakedPosition work as planned?
+TEST_F(GridTest, PositioningTest) {
+  GridObject object1(&grid_, 0);
+  GridObject object2(&grid_, 1);
+  ASSERT_TRUE(object1.Initialize(2, 2));
+  ASSERT_TRUE(object2.Initialize(0, 0));
+
+  // Before we update, our baked positions should be at -1.
+  int baked_x, baked_y;
+  object1.GetBakedPosition(&baked_x, &baked_y);
+  EXPECT_EQ(-1, baked_x);
+  EXPECT_EQ(-1, baked_y);
+
+  object2.GetBakedPosition(&baked_x, &baked_y);
+  EXPECT_EQ(-1, baked_x);
+  EXPECT_EQ(-1, baked_y);
+
+  ASSERT_TRUE(grid_.Update());
+
+  // Move an object.
+  EXPECT_TRUE(object1.SetPosition(0, 1));
+
+  // Test that GetPosition and GetBakedPosition tell us the right things.
+  int x, y;
+  object1.GetPosition(&x, &y);
+  EXPECT_EQ(0, x);
+  EXPECT_EQ(1, y);
+
+  object1.GetBakedPosition(&baked_x, &baked_y);
+  EXPECT_EQ(2, baked_x);
+  EXPECT_EQ(2, baked_y);
+
+  object2.GetPosition(&x, &y);
+  EXPECT_EQ(0, x);
+  EXPECT_EQ(0, y);
+
+  object2.GetBakedPosition(&baked_x, &baked_y);
+  EXPECT_EQ(0, baked_x);
+  EXPECT_EQ(0, baked_y);
+}
+
+}  //  testing
+}  //  automata

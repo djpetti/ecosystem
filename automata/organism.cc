@@ -5,8 +5,8 @@
 
 namespace automata {
 
-Organism::Organism(Grid *grid, int index, int x, int y) :
-    GridObject(grid, index, x, y) {
+Organism::Organism(Grid *grid, int index, int x, int y)
+    : GridObject(grid, index) {
   srand(time(NULL));
 }
 
@@ -24,7 +24,7 @@ bool Organism::UpdatePosition() {
 }
 
 bool Organism::DefaultConflictHandler(Organism *organism1,
-    Organism *organism2) {
+                                      Organism *organism2) {
   // In this case, we'll pick one of the organisms to move again at random.
   int random = rand() % 2;
 
@@ -39,7 +39,6 @@ bool Organism::DefaultConflictHandler(Organism *organism1,
   int x, y;
   to_move->GetPosition(&x, &y);
   grid_->SetBlacklisted(x, y, true);
-
   if (!to_move->UpdatePosition()) {
     return false;
   }
@@ -49,4 +48,4 @@ bool Organism::DefaultConflictHandler(Organism *organism1,
   return true;
 }
 
-} //  automata
+}  //  automata

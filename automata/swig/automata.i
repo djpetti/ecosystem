@@ -10,7 +10,8 @@ using namespace automata;
 
 class GridObject {
  public:
-  GridObject(Grid *grid, int index, int x, int y);
+  GridObject(Grid *grid, int index);
+  bool Initialize(int x, int y);
   void SetIndex(int index);
   bool SetPosition(int x, int y);
   void GetPosition(int *OUTPUT, int *OUTPUT);
