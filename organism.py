@@ -10,15 +10,38 @@ class OrganismError(Exception):
   def __str__(self):
     return repr(self.value)
 
+""" A small helper class that makes retrieving nested items possible. """
+class AttributeHelper:
+  """ attributes: The set of attributes managed by this instance. """
+  def __init__(self, attributes):
+    self._attributes = attributes
+
+  """ Gets an attribute stored in the collection of this helper.
+  name: The attribute name. """
+  def __getattr__(self, name):
+    if name in self._attributes.keys():
+      attribute = self._attributes[name]
+      if type(attribute) is dict:
+        # We can go down another level.
+        return AttributeHelper(attribute)
+
+      # We're at the bottom.
+      return attribute
+    raise OrganismError("Organism has no attribute '%s.'" % (name))
+
+  """ Returns: A dictionary containing all the attributes. """
+  def get_all_attributes(self):
+    return self._attributes
+
 """ The Python representation of an organism. """
-class Organism(grid_object.GridObject):
+class Organism(grid_object.GridObject, AttributeHelper):
   """ index: The index into the grid_objects array of the simulation this
   organism is part of.
   grid: The grid that this organism is part of.
   position: The position of the object on the grid, in the form (x, y). """
   def __init__(self, grid, index, position):
     # Data read from a configuration file that describes this organism.
-    self.__attributes = {}
+    self._attributes = {}
 
     # Underlying C++ organism. This object is shared with the Python GridObject
     # superclass, which makes sense seeing that the C++ version of Organism
@@ -27,14 +50,6 @@ class Organism(grid_object.GridObject):
     if not self._object.Initialize(position[0], position[1]):
       raise OrganismError("Failed to initialize organism.")
 
-  """ A convenient interface for getting this organism's attributes.
-  name: The name of the attribute to get.
-  Returns: The value of this attribute. """
-  def __getattr__(self, name):
-    if name in self.__attributes.keys():
-      return self.__attributes[name]
-    raise OrganismError("Organism has no attribute '%s'." % (name))
-
   """ Updates the status of this organism. Should be run every iteration. """
   def update(self):
     self.__organism.UpdatePosition()
@@ -42,4 +57,4 @@ class Organism(grid_object.GridObject):
   """ Sets the organism's attributes.
   attributes: The attribute data to set. """
   def set_attributes(self, attributes):
-    self.__attributes = attributes
+    self._attributes = attributes
