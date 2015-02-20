@@ -5,7 +5,7 @@
       'type': 'shared_library',
       'cflags': [
         '-fPIC',
-        '-I"/usr/include/python2.7"',
+        '-I"/usr/include/python3.4"',
       ],
       'sources': [
         'automata_wrap.cxx',
@@ -23,7 +23,8 @@
             'automata_wrap.cxx',
             'automata.py',
           ],
-          'action': ['swig', '-python', '-c++', '<@(_inputs)'],
+          'action': ['swig', '-python', '-py3', '-modern', '-c++',
+              '<@(_inputs)'],
         },
         {
           'action_name': 'swig_transfer',

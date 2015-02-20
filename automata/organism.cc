@@ -5,7 +5,7 @@
 
 namespace automata {
 
-Organism::Organism(Grid *grid, int index, int x, int y)
+Organism::Organism(Grid *grid, int index)
     : GridObject(grid, index) {
   srand(time(NULL));
 }
@@ -37,7 +37,7 @@ bool Organism::DefaultConflictHandler(Organism *organism1,
 
   // Before we move, blacklist our current location.
   int x, y;
-  to_move->GetPosition(&x, &y);
+  to_move->get_position(&x, &y);
   grid_->SetBlacklisted(x, y, true);
   if (!to_move->UpdatePosition()) {
     return false;

@@ -223,7 +223,7 @@ TEST_F(AutomataTest, PositioningTest) {
 
   // Test that GetPosition and GetBakedPosition tell us the right things.
   int x, y;
-  object1.GetPosition(&x, &y);
+  object1.get_position(&x, &y);
   EXPECT_EQ(0, x);
   EXPECT_EQ(1, y);
 
@@ -231,7 +231,7 @@ TEST_F(AutomataTest, PositioningTest) {
   EXPECT_EQ(2, baked_x);
   EXPECT_EQ(2, baked_y);
 
-  object2.GetPosition(&x, &y);
+  object2.get_position(&x, &y);
   EXPECT_EQ(0, x);
   EXPECT_EQ(0, y);
 

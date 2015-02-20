@@ -26,7 +26,9 @@ class GridObject {
   virtual ~GridObject();
   // Set the stored object index.
   // index: The organism's index in the Python code.
-  inline void SetIndex(int index) { index_ = index; }
+  inline void set_index(int index) { index_ = index; }
+  // Returns: The organism's index in the Python code.
+  inline int get_index() const { return index_; };
   // Set the position of the object.
   // x: The x coordinate of the object's position.
   // y: The y coordinate of the object's position.
@@ -35,7 +37,7 @@ class GridObject {
   // been updated yet.
   // x: Set to the x coordinate.
   // y: Set to the y coordinate.
-  inline void GetPosition(int *x, int *y) {
+  inline void get_position(int *x, int *y) const {
     *x = x_;
     *y = y_;
   }

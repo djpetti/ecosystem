@@ -17,9 +17,7 @@ class Organism : public GridObject {
  public:
   // grid:  The grid that this organism will exist in.
   // index: The organism's index in the Python code.
-  // x: The x coordinate of the organism's position.
-  // y: The y coordinate of the organism's position.
-  Organism(Grid *grid, int index, int x, int y);
+  Organism(Grid *grid, int index);
   // Set organism's vision.
   // vision: Organism's new vision.
   inline void SetVision(int vision) {

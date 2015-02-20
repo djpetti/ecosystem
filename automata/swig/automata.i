@@ -12,19 +12,22 @@ class GridObject {
  public:
   GridObject(Grid *grid, int index);
   bool Initialize(int x, int y);
-  void SetIndex(int index);
+  void set_index(int index);
+  int get_index() const;
   bool SetPosition(int x, int y);
-  void GetPosition(int *OUTPUT, int *OUTPUT);
+  void get_position(int *OUTPUT, int *OUTPUT) const;
 };
 
 class Organism {
  public:
-  Organism(Grid *grid, int index, int x, int y);
-  void SetIndex(int index);
+  Organism(Grid *grid, int index);
+  bool Initialize(int x, int y);
+  void set_index(int index);
+  int get_index() const;
   void SetVision(int vision);
   void SetSpeed(int speed);
   bool SetPosition(int x, int y);
-  void GetPosition(int *OUTPUT, int *OUTPUT);
+  void get_position(int *OUTPUT, int *OUTPUT) const;
   bool UpdatePosition();
   void AddFactor(int x, int y, int strength, int visibility = -1);
   void AddFactorFromOrganism(Organism *organism, int strength,
