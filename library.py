@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 try:
   from yaml import CLoader as Loader
@@ -5,6 +7,8 @@ except ImportError:
   from yaml import Loader
 
 from organism import Organism
+
+logger = logging.getLogger(__name__)
 
 """ Class designed for importing and managing species from a species library.
 """
@@ -21,6 +25,8 @@ class Library:
   position: Where on the grid to place this organism, in the form (x, y).
   Returns: An organism object containing this organism. """
   def load_organism(self, name, grid, index, position):
+    logger.debug("Loading '%s' from '%s'." % (name, self.__library))
+
     name = name.lower()
     # Add underscore
     name = name.replace(" ", "_")

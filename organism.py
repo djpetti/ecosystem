@@ -1,8 +1,12 @@
+import logging
+
 import sys
 sys.path.append("swig_modules")
 
 from automata import Organism as C_Organism
 import grid_object
+
+logger = logging.getLogger(__name__)
 
 class OrganismError(Exception):
   def __init__(self, value):
@@ -27,7 +31,8 @@ class AttributeHelper:
 
       # We're at the bottom.
       return attribute
-    raise OrganismError("Organism has no attribute '%s.'" % (name))
+    logger.log_and_raise(OrganismError,
+        "Organism has no attribute '%s.'" % (name))
 
   """ Returns: A dictionary containing all the attributes. """
   def get_all_attributes(self):
@@ -48,7 +53,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # inherits from GridObject.
     self._object = C_Organism(grid, index)
     if not self._object.Initialize(position[0], position[1]):
-      raise OrganismError("Failed to initialize organism.")
+      logger.log_and_raise(OrganismError, "Failed to initialize organism.")
 
   """ Updates the status of this organism. Should be run every iteration. """
   def update(self):
@@ -57,4 +62,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Sets the organism's attributes.
   attributes: The attribute data to set. """
   def set_attributes(self, attributes):
+    logger.debug("Setting attributes of organism %d to %s." % \
+        (self.get_index(), str(attributes)))
+
     self._attributes = attributes

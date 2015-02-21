@@ -1,7 +1,11 @@
+import logging
+
 import sys
 sys.path.append("swig_modules")
 
 from automata import GridObject as C_GridObject
+
+logger = logging.getLogger(__name__)
 
 class GridObjectError(Exception):
   def __init__(self, value):
@@ -24,7 +28,8 @@ class GridObject(C_GridObject):
   """ Does whatever changes that are required for this object from one iteration
   to the next. """
   def update(self):
-    raise NotImplementedError("'update' must be implemented by subclass.")
+    logger.log_and_raise(NotImplementedError,
+        "'update' must be implemented by subclass.")
 
   """ Changes the index for this object.
   index: The new index. """
@@ -39,8 +44,12 @@ class GridObject(C_GridObject):
   """ Sets the current position of this object.
   position: The object's position in the form (x, y). """
   def set_position(self, position):
+    logger.debug("Setting position of object %d to %s." % \
+        (self.get_index(), str(position)))
+
     if not self._object.SetPosition(position[0], position[1]):
-      raise GridObjectError("Failed to set the object's position.")
+      logger.log_and_raise(GridObjectError,
+          "Failed to set the object's position.")
 
   """ Returns: The current object's position in the form (x, y). """
   def get_position(self):
