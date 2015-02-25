@@ -1,0 +1,15 @@
+# Testing configuration file for a simulation.
+
+# These parameters specify the size of the grid.
+GridXSize: 100
+GridYSize: 100
+
+# This section specifies a list of species to put on the grid at the start of
+# the simulation. Each organism will be placed randomly to begin with.
+Organisms:
+    # Scientific name of the species.
+  - Name: "agrostis stolonifera"
+    # Library the organism comes from.
+    Library: "species_library"
+    # Quantity of this species to place.
+    Quantity: 25

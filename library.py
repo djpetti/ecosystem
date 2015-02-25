@@ -1,14 +1,16 @@
 import logging
 
+logger = logging.getLogger(__name__)
+
 import yaml
 try:
   from yaml import CLoader as Loader
 except ImportError:
+  logger.warning("Falling back on Python yaml parser.")
   from yaml import Loader
 
 from organism import Organism
 
-logger = logging.getLogger(__name__)
 
 """ Class designed for importing and managing species from a species library.
 """

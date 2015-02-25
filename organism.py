@@ -57,7 +57,8 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
   """ Updates the status of this organism. Should be run every iteration. """
   def update(self):
-    self.__organism.UpdatePosition()
+    logger.debug("Updating position of organism %d." % (self.get_index()))
+    self._object.UpdatePosition()
 
   """ Sets the organism's attributes.
   attributes: The attribute data to set. """

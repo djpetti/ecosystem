@@ -91,14 +91,13 @@ class GridVisualization:
     self.__window.bind("<Down>", self.move_down)
 
   """ Moves all the objects involved in this visualization.
+  Note that in order for the grid object visualizations to
+  move correctly, someone must call update() on them.
   x: How many pixels to move in the x direction.
   y: How many pixels to move in the y direction. """
   def __move_all(self, x, y):
     for canvas_object in self.__canvas_objects:
       self.__canvas.move(canvas_object, x, y)
-    # Move grid objects.
-    for grid_object in self.__grid_objects:
-      grid_object.move(x, y)
 
     self.__window_x -= x
     self.__window_y -= y
@@ -137,6 +136,10 @@ class GridVisualization:
     x += self.__square_x_size / 2.0
     y += self.__square_y_size / 2.0
 
+    # Factor in the simulated window position.
+    x -= self.__window_x - self.__width / 2.0
+    y -= self.__window_y - self.__height / 2.0
+
     return (x, y)
 
   """ Returns: The canvas the grid is drawn on. """
@@ -162,6 +165,7 @@ class GridVisualization:
     for grid_object in self.__grid_objects:
       grid_object.update()
 
+    self.__window.update()
 
 """ These represent objects that move around on the grid visualization. """
 class GridObjectVisualization:

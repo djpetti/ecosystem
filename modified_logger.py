@@ -1,4 +1,5 @@
 import logging
+import sys
 
 """ A logger subclass with some minor changes to make implementation easier. """
 class Logger(logging.Logger):
@@ -39,6 +40,12 @@ class Logger(logging.Logger):
   def log_and_raise(self, exception, message, *args, **kwargs):
     self.error(message, *args, **kwargs)
     raise exception(message, *args, **kwargs)
+
+  """ Logs at the critical level and aborts.
+  message: The message to log. """
+  def fatal(self, message, *args, **kwargs):
+    self.critical(message, *args, **kwargs)
+    sys.exit(1)
 
 # Use this as the default logger.
 logging.setLoggerClass(Logger)
