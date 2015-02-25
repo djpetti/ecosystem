@@ -299,17 +299,15 @@ void Grid::RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
 }
 
 void Grid::RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys) {
-  ::std::vector<int> to_delete;
   for (uint32_t i = 0; i < xs->size(); ++i) {
     if (grid_[(*xs)[i] * x_size_ + (*ys)[i]].Blacklisted) {
       // This cell is blacklisted. Remove it from consideration.
-      to_delete.push_back(i);
-    }
-  }
+      xs->erase(xs->begin() + i);
+      ys->erase(ys->begin() + i);
 
-  for (auto index : to_delete) {
-    xs->erase(xs->begin() + index);
-    ys->erase(ys->begin() + index);
+      // We lost something, so we should stay on the same index.
+      --i;
+    }
   }
 }
 

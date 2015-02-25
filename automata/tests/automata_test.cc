@@ -149,6 +149,14 @@ TEST_F(AutomataTest, MotionFactorsTest) {
     EXPECT_GT(probabilities[7], probabilities[i]);
   }
 
+  // If we blacklist factors, they should get removed.
+  grid_.SetBlacklisted(2, 1, true);
+  auto blacklist_xs = xs;
+  auto blacklist_ys = ys;
+  grid_.RemoveBlacklisted(&blacklist_xs, &blacklist_ys);
+  EXPECT_EQ(7, blacklist_xs.size());
+  EXPECT_EQ(7, blacklist_ys.size());
+
   // This same attractive factor should stop working if we set its visibility
   // low enough.
   auto invisible_factors = factors;

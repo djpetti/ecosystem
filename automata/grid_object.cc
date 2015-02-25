@@ -19,14 +19,22 @@ GridObject::~GridObject() {
 }
 
 bool GridObject::SetPosition(int x, int y) {
+  // Edge case: If we are setting the same position over again, it is best not
+  // to do anything.
+  if (x == x_ && y == y_) {
+    return true;
+  }
+
   // Set ourselves at our new location.
+  bool conflicted = false;
   if (!grid_->SetOccupant(x, y, this)) {
     if (grid_->GetConflict(x, y) == this) {
-      // We're conflicted, so it's worth updating our current position.
-      x_ = x;
-      y_ = y;
+      // We're conflicted.
+      conflicted = true;
+    } else {
+      // We failed for some other reason.
+      return false;
     }
-    return false;
   }
 
   // We have to remove ourself from our old location on the grid.
@@ -46,7 +54,7 @@ bool GridObject::SetPosition(int x, int y) {
   x_ = x;
   y_ = y;
 
-  return true;
+  return !conflicted;
 }
 
 void GridObject::GetBakedPosition(int *x, int *y) {

@@ -30,6 +30,7 @@
           'action_name': 'swig_transfer',
           'inputs': [
             'automata.py',
+            'automata_wrap.cxx',
           ],
           'outputs': [
             '<(DEPTH)/swig_modules/automata.py',
