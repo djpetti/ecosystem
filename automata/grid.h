@@ -19,6 +19,7 @@ namespace testing {
 // Forward declaration for testing.
 class AutomataTest_MotionTest_Test;
 class AutomataTest_MotionFactorsTest_Test;
+class AutomataTest_OutOfBoundsTest_Test;
 }  //  namespace testing
 
 // Forward declaration of GridObject to break circular dependency.
@@ -68,14 +69,8 @@ class Grid {
   // x: The x coordinate of the cell's location.
   // y: The y coordinate of the cell's location.
   // Returns: The contents of the cell's conflicted slot.
-  inline GridObject *GetConflict(int x, int y) {
+  inline GridObject *GetConflict(int x, int y) const {
     return grid_[x * x_size_ + y].ConflictedObject;
-  }
-  // Clears any conflicted object that is pending insertion at this cell.
-  // x: The x coordinate of the cell's location.
-  // y: The y coordinate of the cell's location.
-  inline void PurgeConflict(int x, int y) {
-    grid_[x * x_size_ + y].ConflictedObject = nullptr;
   }
   // Clears an object that is pending insertion at this cell. It will not
   // generate conflicts. Will clear anything pending insertion, including
@@ -94,15 +89,22 @@ class Grid {
   inline void SetBlacklisted(int x, int y, bool blacklist) {
     grid_[x * x_size_ + y].Blacklisted = blacklist;
   }
-  // Returns the occupants of the locations in the extended neighborhood around
-  // a specific location. If levels is something other than one, it includes
-  // items in each successive level around the neighborhood. The output argument
-  // specifies a pointer to a vector of vectors. Each subvector represents the
-  // indices in the neighborbood for one level. The subvectors are organized in
-  // ascending order by level.
+  // Gets the occupants of the locations in the extended neighborhood around
+  // a specific location.
+  // x: The x coordinate of the center cell.
+  // y: The y coordinate of the center cell.
+  // objects: specifies a pointer to a vector of vectors. Each subvector
+  // represents the indices in the neighborbood for one level. The subvectors
+  // are organized in ascending order by level.
+  // levels: If it is something other than one, it includes
+  // items in each successive level around the neighborhood.
+  // get_new: If true, it gets the organisms in the pending slot. If false, it
+  // gets the organisms in the baked slot.
+  // Returns: True if it suceeds, false if the center cell is out of bounds
+  // of the grid.
   bool GetNeighborhood(int x, int y,
                        ::std::vector< ::std::vector<GridObject *> > *objects,
-                       int levels = 1);
+                       int levels = 1, bool get_new = false);
   // Takes a vector of movement factors, and chooses a location for a grid
   // object to move to.
   // x: x coordinate of the organism's current position.
@@ -134,6 +136,7 @@ class Grid {
  private:
   friend class testing::AutomataTest_MotionTest_Test;
   friend class testing::AutomataTest_MotionFactorsTest_Test;
+  friend class testing::AutomataTest_OutOfBoundsTest_Test;
 
   // A structure for representing cells in the grid.
   struct Cell {
@@ -144,8 +147,16 @@ class Grid {
     GridObject *NewObject;
     // This object gets filled in if we have a conflict.
     GridObject *ConflictedObject;
-    // Whether we want to prevent things from moving here.
+    // Whether we want to prevent things from moving here. This flag is mostly
+    // meant to be used by things outside the grid to explicitly restrict
+    // movement. It is meant to be set for a very limited time period, and gets
+    // cleared at the end of every cycle.
     bool Blacklisted;
+    // Whether we want to request that this cell keeps its same occupant for the
+    // next cycle. Normally, this is just the default and anything else
+    // automatically overrides it, but setting this flag makes it conflict
+    // instead.
+    bool RequestStasis;
   };
 
   // Calculates the probability of moving to every square in the extended
@@ -198,11 +209,11 @@ class Grid {
   // perceive it. A negative value means that there is no limit.
   void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
                        int vision);
-  // Removes any cells for which the Blacklisted attribute is set to true from
-  // consideration.
+  // Removes any cells for which the Blacklisted attribute is set to true or
+  // which are conflicted from consideration for movement.
   // xs: The x coordinates of the cells to consider.
   // ys: The y coordinates of the cells to consider.
-  void RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys);
+  void RemoveUnusable(::std::vector<int> *xs, ::std::vector<int> *ys);
 
   // Returns whether or not the underlying array is initialized.
   inline bool IsInitialized() { return initialized_; }

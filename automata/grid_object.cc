@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h> // TEMP
 
 #include "grid_object.h"
 
@@ -37,6 +38,9 @@ bool GridObject::SetPosition(int x, int y) {
     }
   }
 
+  printf("Index: %d\n", get_index());
+  printf("New position: (%d, %d)\n", x, y);
+  printf("Old position: (%d, %d)\n", x_, y_);
   // We have to remove ourself from our old location on the grid.
   if (grid_->GetOccupant(x_, y_) != this) {
     // The grid hasn't been updated since the last time we set the position.

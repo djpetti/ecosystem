@@ -1,3 +1,7 @@
+#!/bin/bash
+
+echo "Running swig_transfer."
+
 # Make output directory
 mkdir -p $1/swig_modules
 

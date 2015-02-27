@@ -192,8 +192,6 @@ class GridObjectVisualization:
   def __draw(self, position):
     x, y = self.__grid.get_actual_coordinates(position)
     x_size, y_size = self.__grid.get_square_size()
-    logger.debug("%d: Drawing at (%d, %d)." % \
-        (self.__object.get_index(), x, y))
 
     canvas = self.__grid.get_canvas()
     coordinates = (x - x_size / 2.0, y - y_size / 2.0,

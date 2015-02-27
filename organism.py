@@ -58,7 +58,18 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Updates the status of this organism. Should be run every iteration. """
   def update(self):
     logger.debug("Updating position of organism %d." % (self.get_index()))
-    self._object.UpdatePosition()
+
+    if not self._object.UpdatePosition():
+      logger.debug("Updating organism %d position failed." % \
+          (self.get_index()))
+
+      # Check to see if we have a conflict we can resolve.
+      if not self._object.DefaultConflictHandler():
+        # This is actually a significant error, because we either failed for a
+        # reason other than being conflicted or failed to resolve the conflict.
+        logger.log_and_raise(OrganismError,
+            "Organism %d was either not conflicted or conflict"
+            "resolution failed." % (self.get_index()))
 
   """ Sets the organism's attributes.
   attributes: The attribute data to set. """

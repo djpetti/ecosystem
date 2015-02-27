@@ -94,8 +94,12 @@ class Simulation:
     for grid_object in self.__grid_objects:
       grid_object.update()
 
+    # Update the grid.
+    if not self.__grid.Update():
+      logger.log_and_raise("Grid Update() failed unexpectedly.")
+
     self.__iteration.value += 1
-    print("Iteration: %d" % (self.__iteration.value));
+    logger.debug("Running iteration %d." % (self.__iteration.value))
 
   """ Start the simulation. """
   def start(self):

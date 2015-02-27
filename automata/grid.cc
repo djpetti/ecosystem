@@ -22,6 +22,7 @@ Grid::Grid(int x_size, int y_size)
     grid_[i].NewObject = nullptr;
     grid_[i].ConflictedObject = nullptr;
     grid_[i].Blacklisted = false;
+    grid_[i].RequestStasis = false;
   }
 }
 
@@ -30,7 +31,7 @@ Grid::~Grid() { delete[] grid_; }
 bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
   Cell *cell = &grid_[x * x_size_ + y];
   if (cell->Blacklisted) {
-    if (!occupant || occupant == cell->Object || occupant == cell->NewObject) {
+    if (!occupant || occupant == cell->NewObject) {
       // We wouldn't do anything anyway in these cases, so this is not a
       // failure.
       return true;
@@ -39,22 +40,27 @@ bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
     return false;
   }
 
-  if (!cell->NewObject || cell->NewObject == cell->Object) {
+  if (!cell->NewObject ||
+      (cell->NewObject == cell->Object && !cell->RequestStasis)) {
     // No occupants.
     assert(!cell->ConflictedObject && "Found conflict on vacant cell.");
     cell->NewObject = occupant;
+
+    if (occupant == cell->Object) {
+      // This is an explicit request to keep this cell the same for the next
+      // cycle.
+      cell->RequestStasis = true;
+    }
   } else {
     // We have a conflict.
-    if (!occupant || occupant == cell->Object || occupant == cell->NewObject) {
-      // Setting NewObject to the same thing over again, or to the same thing as
-      // Object is not a failure, but doesn't do anything. Same with setting it
-      // to nullptr if it's already occupied.
+    if (!occupant || occupant == cell->NewObject) {
+      // Setting NewObject to the same thing over again is not a failure, but
+      // doesn't do anything. Same with setting it to nullptr if it's already
+      // occupied.
       return true;
     }
 
     cell->ConflictedObject = occupant;
-    // Blacklist this cell so that nothing else moves here.
-    cell->Blacklisted = true;
     return false;
   }
 
@@ -64,12 +70,23 @@ bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
 bool Grid::PurgeNew(int x, int y, const GridObject *object) {
   Cell *cell = &grid_[x * x_size_ + y];
   if (object == cell->NewObject) {
+    bool stasis = false;
     if (cell->ConflictedObject) {
       // Our conflict isn't a conflict anymore.
+      if (cell->ConflictedObject == cell->Object) {
+        // Edge case: We are explicitly requesting that this slot not change.
+        cell->RequestStasis = stasis = true;
+      }
+
       cell->NewObject = cell->ConflictedObject;
       cell->ConflictedObject = nullptr;
     } else {
       cell->NewObject = cell->Object;
+    }
+
+    if (!stasis) {
+      // Things can move here again.
+      cell->RequestStasis = false;
     }
   } else if (object == cell->ConflictedObject) {
     // Remove conflicted object.
@@ -149,7 +166,7 @@ bool Grid::GetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
 
 bool Grid::GetNeighborhood(
     int x, int y, ::std::vector< ::std::vector<GridObject *> > *objects,
-    int levels /* = 1*/) {
+    int levels /*= 1*/, bool get_new /*= false*/) {
   objects->clear();
 
   ::std::vector<int> xs, ys;
@@ -164,7 +181,15 @@ bool Grid::GetNeighborhood(
   while (current_i < xs.size()) {
     ::std::vector<GridObject *> level_objects;
     for (; current_i < in_level && current_i < xs.size(); ++current_i) {
-      level_objects.push_back(GetOccupant(xs[current_i], ys[current_i]));
+      GridObject *occupant;
+      if (get_new) {
+        occupant = GetPending(xs[current_i], ys[current_i]);
+      } else {
+        occupant = GetOccupant(xs[current_i], ys[current_i]);
+      }
+      if (occupant) {
+        level_objects.push_back(occupant);
+      }
     }
 
     // Add the contents of this level to our main output vector.
@@ -189,8 +214,8 @@ bool Grid::MoveObject(int x, int y,
   // We want it to have the possibility of staying in the same place also.
   xs.push_back(x);
   ys.push_back(y);
-  // Remove blacklisted locations from consideration.
-  RemoveBlacklisted(&xs, &ys);
+  // Remove blacklisted and conflicted locations from consideration.
+  RemoveUnusable(&xs, &ys);
 
   double probabilities[8];
   CalculateProbabilities(visible_factors, xs, ys, probabilities);
@@ -298,10 +323,11 @@ void Grid::RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
   }
 }
 
-void Grid::RemoveBlacklisted(::std::vector<int> *xs, ::std::vector<int> *ys) {
+void Grid::RemoveUnusable(::std::vector<int> *xs, ::std::vector<int> *ys) {
   for (uint32_t i = 0; i < xs->size(); ++i) {
-    if (grid_[(*xs)[i] * x_size_ + (*ys)[i]].Blacklisted) {
-      // This cell is blacklisted. Remove it from consideration.
+    const Cell *cell = &grid_[(*xs)[i] * x_size_ + (*ys)[i]];
+    if (cell->Blacklisted || cell->ConflictedObject) {
+      // This cell is blacklisted or unusable. Remove it from consideration.
       xs->erase(xs->begin() + i);
       ys->erase(ys->begin() + i);
 
@@ -322,6 +348,7 @@ bool Grid::Update() {
     // Setting them both to be the same by default allows nullptr to be a valid
     // thing to swap in.
     grid_[i].Blacklisted = false;
+    grid_[i].RequestStasis = false;
   }
 
   return true;
@@ -329,6 +356,9 @@ bool Grid::Update() {
 
 void Grid::GetConflicted(::std::vector<GridObject *> *objects1,
                          ::std::vector<GridObject *> *objects2) {
+  objects1->clear();
+  objects2->clear();
+
   for (int i = 0; i < x_size_ * y_size_; ++i) {
     if (grid_[i].ConflictedObject) {
       objects1->push_back(grid_[i].NewObject);

@@ -20,17 +20,19 @@ class Organism : public GridObject {
   Organism(Grid *grid, int index);
   // Set organism's vision.
   // vision: Organism's new vision.
-  inline void SetVision(int vision) {
-    vision_ = vision;
-  }
+  inline void set_vision(int vision) { vision_ = vision; }
+  // Returns: Organism's vision.
+  inline int get_vision() const { return vision_; }
   // Set organism's speed.
   // speed: Organism's new speed.
-  inline void SetSpeed(int speed) {
-    speed_ = speed;
-  }
+  inline void set_speed(int speed) { speed_ = speed; }
+  // Returns: Organism's speed.
+  inline int get_speed() const { return speed_; }
   // Calculates if the organism should move, and where it should move.
+  // use_x: Allows user to specify a custom position to calculate movement from.
+  // use_y: See use_x.
   // Returns: true if the movement calculations were successful.
-  bool UpdatePosition();
+  bool UpdatePosition(int use_x = -1, int use_y = -1);
   // Add a new movement factor for this organism.
   // x: The x position of the factor.
   // y: The y position of the factor.
@@ -48,19 +50,29 @@ class Organism : public GridObject {
   // visibility: How far away the factor can be perceived by this organism, in
   // cells. A negative value means there is no limit.
   inline void AddFactorFromOrganism(Organism *organism, int strength,
-      int visibility = -1) {
+                                    int visibility = -1) {
     MovementFactor factor(organism, strength, visibility);
     factors_.push_back(factor);
   }
-  // A default handler for conflicts on the grid between two organisms. It
-  // resolves the conflict by forcing a random one of them to move again.
-  // organism1: The first organism involved in the conflict.
-  // organism2: The second organism involved in the conflict.
+  // A default handler for conflicts on the grid between this organism and
+  // another. It resolves the conflict by forcing a random one of them to
+  // move again. This method can be called on either organism involved in a
+  // conflict.
   // Returns: false if it fails to update the position of the organism it is
-  // moving.
-  bool DefaultConflictHandler(Organism *organism1, Organism *organism2);
+  // moving, or if it finds that this organism is not conflicted.
+  bool DefaultConflictHandler();
 
  private:
+  // (Un)blacklists every space in an organism's neighborhood that contains
+  // something that would generate a conflict if the organism tried to move
+  // there. Conflict handlers will run at the end of a cycle when blacklisting
+  // flags are about to get cleared anyway, so it's okay to mess with them.
+  // x: The x coordinate of the center of the neighborhood.
+  // y: The y coordinate of the center of the neighborhood.
+  // blacklist: True if we're blacklisting, false if we're unblacklisting.
+  // levels: How many levels to use when calculating the neighborhood.
+  void BlacklistOccupied(int x, int y, bool blacklisting, int levels);
+
   // The set of movement factors on this grid that could possibly affect this
   // organism.
   ::std::vector<MovementFactor> factors_;
@@ -71,6 +83,6 @@ class Organism : public GridObject {
   uint32_t speed_ = 1;
 };
 
-} //  automata
+}  //  automata
 
 #endif
