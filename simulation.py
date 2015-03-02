@@ -91,8 +91,14 @@ class Simulation:
   """ Completely update the grid a single time. """
   def __run_iteration(self):
     # Update the status of all objects.
+    to_delete = []
     for grid_object in self.__grid_objects:
-      grid_object.update()
+      if not grid_object.update():
+        # Organism died. Remove it.
+        to_delete.append(grid_object)
+
+    for organism in to_delete:
+      self.__grid_objects.remove(organism)
 
     # Update the grid.
     if not self.__grid.Update():

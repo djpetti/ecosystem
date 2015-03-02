@@ -40,6 +40,8 @@ class Organism {
   void AddFactorFromOrganism(Organism *organism, int strength,
       int visibility = -1);
   bool DefaultConflictHandler();
+  void Die();
+  bool IsAlive() const;
 };
 
 class Grid {

@@ -61,6 +61,14 @@ class Organism : public GridObject {
   // Returns: false if it fails to update the position of the organism it is
   // moving, or if it finds that this organism is not conflicted.
   bool DefaultConflictHandler();
+  // Specifies that this particular organism has died and is now defunct.
+  inline void Die() {
+    alive_ = false;
+  }
+  // Returns: Whether or not the organism is alive.
+  inline bool IsAlive() const {
+    return alive_;
+  }
 
  private:
   // (Un)blacklists every space in an organism's neighborhood that contains
@@ -81,6 +89,8 @@ class Organism : public GridObject {
   int vision_ = -1;
   // Maximum distance in cells that the organism can move at one time.
   uint32_t speed_ = 1;
+  // Whether the organism is alive.
+  bool alive_ = true;
 };
 
 }  //  automata

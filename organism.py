@@ -55,9 +55,16 @@ class Organism(grid_object.GridObject, AttributeHelper):
     if not self._object.Initialize(position[0], position[1]):
       logger.log_and_raise(OrganismError, "Failed to initialize organism.")
 
-  """ Updates the status of this organism. Should be run every iteration. """
+  """ Updates the status of this organism. Should be run every iteration.
+  Returns: True if it proceeds normally, false if this organism is dead or
+  otherwise defunct."""
   def update(self):
-    logger.debug("Updating position of organism %d." % (self.get_index()))
+    logger.debug("Updating organism %d." % (self.get_index()))
+
+    if not self.is_alive():
+      # It died.
+      logger.info("Organism %d is dead." % (self.get_index()))
+      return False
 
     if not self._object.UpdatePosition():
       logger.debug("Updating organism %d position failed." % \
@@ -71,6 +78,8 @@ class Organism(grid_object.GridObject, AttributeHelper):
             "Organism %d was either not conflicted or conflict"
             "resolution failed." % (self.get_index()))
 
+    return True
+
   """ Sets the organism's attributes.
   attributes: The attribute data to set. """
   def set_attributes(self, attributes):
@@ -78,3 +87,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
         (self.get_index(), str(attributes)))
 
     self._attributes = attributes
+
+  """ Returns whether or not the organism is alive. """
+  def is_alive(self):
+    return self._object.IsAlive()
