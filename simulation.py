@@ -1,3 +1,10 @@
+class SimulationError(Exception):
+  def __init__(self, value):
+    self.value = value
+  def __str__(self):
+    return repr(self.value)
+
+
 from multiprocessing import Process, Value
 
 import logging
@@ -10,14 +17,8 @@ from phased_loop import PhasedLoop
 import automata
 import visualization
 
+
 logger = logging.getLogger(__name__)
-
-
-class SimulationError(Exception):
-  def __init__(self, value):
-    self.value = value
-  def __str__(self):
-    return repr(self.value)
 
 
 """ Controls a simulation. """

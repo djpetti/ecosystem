@@ -1,24 +1,30 @@
+class OrganismError(Exception):
+  def __init__(self, value):
+    self.__value = value
+  def __str__(self):
+    return repr(self.__value)
+
+
 import logging
 
 import sys
 sys.path.append("swig_modules")
 
 from automata import Organism as C_Organism
+from update_handler import UpdateHandler
 import grid_object
 
 logger = logging.getLogger(__name__)
 
-class OrganismError(Exception):
-  def __init__(self, value):
-    self.value = value
-  def __str__(self):
-    return repr(self.value)
 
 """ A small helper class that makes retrieving nested items possible. """
 class AttributeHelper:
   """ attributes: The set of attributes managed by this instance. """
   def __init__(self, attributes):
     self._attributes = attributes
+
+    # A list of handlers that apply to this organism.
+    self.__handlers = []
 
   """ Gets an attribute stored in the collection of this helper.
   name: The attribute name. """
@@ -31,8 +37,8 @@ class AttributeHelper:
 
       # We're at the bottom.
       return attribute
-    logger.log_and_raise(OrganismError,
-        "Organism has no attribute '%s.'" % (name))
+    logger.log_and_raise(AttributeError,
+        "Organism has no attribute '%s'." % (name))
 
   """ Returns: A dictionary containing all the attributes. """
   def get_all_attributes(self):
@@ -43,10 +49,14 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ index: The index into the grid_objects array of the simulation this
   organism is part of.
   grid: The grid that this organism is part of.
+  index: The organism's index in the simulation list.
   position: The position of the object on the grid, in the form (x, y). """
   def __init__(self, grid, index, position):
     # Data read from a configuration file that describes this organism.
     self._attributes = {}
+
+    # Handlers that apply to this organism.
+    self.__handlers = []
 
     # Underlying C++ organism. This object is shared with the Python GridObject
     # superclass, which makes sense seeing that the C++ version of Organism
@@ -66,17 +76,9 @@ class Organism(grid_object.GridObject, AttributeHelper):
       logger.info("Organism %d is dead." % (self.get_index()))
       return False
 
-    if not self._object.UpdatePosition():
-      logger.debug("Updating organism %d position failed." % \
-          (self.get_index()))
-
-      # Check to see if we have a conflict we can resolve.
-      if not self._object.DefaultConflictHandler():
-        # This is actually a significant error, because we either failed for a
-        # reason other than being conflicted or failed to resolve the conflict.
-        logger.log_and_raise(OrganismError,
-            "Organism %d was either not conflicted or conflict"
-            "resolution failed." % (self.get_index()))
+    # Run handlers.
+    for handler in self.__handlers:
+      handler.handle_organism(self)
 
     return True
 
@@ -88,6 +90,33 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     self._attributes = attributes
 
+    # Figure out which handlers apply to us.
+    UpdateHandler.set_handlers_static_filtering(self)
+
   """ Returns whether or not the organism is alive. """
   def is_alive(self):
     return self._object.IsAlive()
+
+  """ Adds a handler as one that will handle this organism when it is updated.
+  handler: handler to add. """
+  def add_handler(self, handler):
+    self.__handlers.append(handler)
+
+  """ Updates the position of the organism. """
+  def update_position(self):
+    if not self._object.UpdatePosition():
+      logger.log_and_raise("Updating organism %d position failed." % \
+          (self.get_index()))
+
+  """ Runs the default conflict handler on this organism. """
+  def default_conflict_handler(self):
+    if not self._object.DefaultConflictHandler():
+      # This is actually a significant error, because we either failed for a
+      # reason other than being conflicted or failed to resolve the conflict.
+      logger.log_and_raise(OrganismError,
+          "Organism %d was either not conflicted or conflict"
+          "resolution failed." % (self.get_index()))
+
+  """ Get the handlers that apply to this organism. """
+  def get_handlers(self):
+    return self.__handlers
