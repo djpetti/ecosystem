@@ -8,15 +8,27 @@ namespace automata {
 GridObject::GridObject(Grid *grid, int index) : index_(index), grid_(grid) {}
 
 GridObject::~GridObject() {
-  if (grid_->GetOccupant(x_, y_) != this) {
-    // If it hasn't been updated yet, it's relatively easy to get rid of
-    // ourselves. Technically, this could return false, especially if we're
-    // destructing before we called Initialize(), but there's not a whole lot we
-    // can do about that.
-    grid_->PurgeNew(x_, y_, this);
-  } else {
-    grid_->ForcePurgeOccupant(x_, y_);
+  // Technically, this can return false, but there's not much to do about it if
+  // it does.
+  RemoveFromGrid();
+}
+
+bool GridObject::RemoveFromGrid() {
+  if (on_grid_) {
+    if (grid_->GetOccupant(x_, y_) != this) {
+      // If it hasn't been updated yet, we need to get rid of ourselves at the
+      // new location.
+      if (!grid_->PurgeNew(x_, y_, this)) {
+        return false;
+      }
+    }
+    int baked_x, baked_y;
+    GetBakedPosition(&baked_x, &baked_y);
+    grid_->ForcePurgeOccupant(baked_x, baked_y);
   }
+
+  on_grid_ = false;
+  return true;
 }
 
 bool GridObject::SetPosition(int x, int y) {

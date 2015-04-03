@@ -7,6 +7,10 @@
 #include <algorithm>
 
 #include "automata/grid.h"
+// We need the complete version of GridObject in this file, but we must use the
+// forward-declared incomplete version in the header because including it there
+// would cause a circular dependency issue.
+#include "automata/grid_object.h"
 
 namespace automata {
 
@@ -26,7 +30,28 @@ Grid::Grid(int x_size, int y_size)
   }
 }
 
-Grid::~Grid() { delete[] grid_; }
+Grid::~Grid() {
+  // The reason we're calling this here is because Python's garbage collector
+  // sometimes likes to destroy a grid before it destroys things that depend
+  // on that grid, leading to odd segfaults when it goes to destroy the
+  // dependents, and those dependents try to remove themselves from the
+  // destroyed grid in their destructors.
+  for (int i = 0; i < x_size_ * y_size_; ++i) {
+    if (grid_[i].Object) {
+      // Technically, RemoveFromGrid() can return false, but there's not much we
+      // can do about it if it does.
+      grid_[i].Object->RemoveFromGrid();
+    }
+    if (grid_[i].NewObject) {
+      grid_[i].NewObject->RemoveFromGrid();
+    }
+    if (grid_[i].ConflictedObject) {
+      grid_[i].ConflictedObject->RemoveFromGrid();
+    }
+  }
+
+  delete[] grid_;
+}
 
 bool Grid::SetOccupant(int x, int y, GridObject *occupant) {
   Cell *cell = &grid_[x * x_size_ + y];

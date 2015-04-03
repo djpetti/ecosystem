@@ -292,15 +292,15 @@ TEST_F(AutomataTest, ConflictResolutionTest) {
   EXPECT_TRUE(grid_.Update());
 
   // Make the same conflict again.
-  EXPECT_TRUE(object2.SetPosition(1, 1));
-  EXPECT_FALSE(object1.SetPosition(1, 1));
-  EXPECT_EQ(&object1, grid_.GetConflict(1, 1));
+  EXPECT_TRUE(object2.SetPosition(7, 7));
+  EXPECT_FALSE(object1.SetPosition(7, 7));
+  EXPECT_EQ(&object1, grid_.GetConflict(7, 7));
 
   // The handler should work just as well if we run it on the pending object.
   EXPECT_TRUE(object2.DefaultConflictHandler());
 
   // The conflict should be resolved.
-  EXPECT_EQ(nullptr, grid_.GetConflict(1, 1));
+  EXPECT_EQ(nullptr, grid_.GetConflict(7, 7));
   grid_.GetConflicted(&conflicts1, &conflicts2);
   EXPECT_TRUE(conflicts1.empty());
   EXPECT_TRUE(conflicts2.empty());
@@ -343,6 +343,48 @@ TEST_F(AutomataTest, StasisRequestTest) {
   // At this point, we should get a conflict if we try to set it to object2
   // again.
   EXPECT_FALSE(grid_.SetOccupant(0, 0, &object2));
+}
+
+// Do things get cleaned up properly regardless of the order in which we delete
+// the objects and the grid? (It has to handle those cases because we don't
+// quite know what order the Python GC is going to destroy things in.)
+// NOTE: This test will generally fail by segfaulting. Have fun.
+TEST_F(AutomataTest, CleanupTest) {
+  // We're going to put stuff on the heap so we can control exactly when it gets
+  // destroyed.
+  Grid *grid = new Grid(9, 9);
+  GridObject *object1 = new GridObject(grid, 0);
+  GridObject *object2 = new GridObject(grid, 1);
+  ASSERT_TRUE(object1->Initialize(0, 0));
+  ASSERT_TRUE(object2->Initialize(1, 1));
+
+  // Move one object so we have another pointer to it floating around on the
+  // grid.
+  ASSERT_TRUE(object1->SetPosition(2, 2));
+
+  // Delete the objects.
+  delete object1;
+  delete object2;
+
+  // There should be no trace of them left on the grid.
+  EXPECT_EQ(nullptr, grid->GetOccupant(0, 0));
+  EXPECT_EQ(nullptr, grid->GetPending(2, 2));
+  EXPECT_EQ(nullptr, grid->GetOccupant(1, 1));
+  EXPECT_EQ(nullptr, grid->GetPending(1, 1));
+
+  // Make the objects again.
+  object1 = new GridObject(grid, 0);
+  object2 = new GridObject(grid, 1);
+  ASSERT_TRUE(object1->Initialize(0, 0));
+  ASSERT_TRUE(object2->Initialize(1, 1));
+
+  ASSERT_TRUE(object1->SetPosition(2, 2));
+
+  // Now the fun test: Delete the grid first and verify that deleting the
+  // objects doesn't blow things up.
+  delete grid;
+  delete object1;
+  delete object2;
 }
 
 }  //  testing

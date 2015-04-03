@@ -51,7 +51,12 @@ class Grid {
   // x: The x coordinate of the location to purge.
   // y: The y coordinate of the location to purge.
   inline void ForcePurgeOccupant(int x, int y) {
-    grid_[x * x_size_ + y].Object = nullptr;
+    Cell *cell = &grid_[x * x_size_ + y];
+
+    if (cell->NewObject == cell->Object) {
+      cell->NewObject = nullptr;
+    }
+    cell->Object = nullptr;
   }
   // x: The x coordinate of the cell's location.
   // y: The y coordinate of the cell's location.

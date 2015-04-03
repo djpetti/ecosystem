@@ -20,6 +20,7 @@ class GridObject {
   inline bool Initialize(int x, int y) {
     x_ = x;
     y_ = y;
+    on_grid_ = true;
     return grid_->SetOccupant(x_, y_, this);
   }
   // Ensures that the grid stores no reference to this object.
@@ -48,6 +49,9 @@ class GridObject {
   // x: Set to the x coordinate.
   // y: Set to the y coordinate.
   void GetBakedPosition(int *x, int *y);
+  // Removes the object from the grid. It is okay to call this function more
+  // than once.
+  bool RemoveFromGrid();
 
  protected:
   // x and y coordinates of the object's position, present and past, index of
@@ -55,8 +59,12 @@ class GridObject {
   int x_, y_, index_;
   int last_x_ = -1;
   int last_y_ = -1;
+
   // The grid that this object exists on.
   Grid *grid_;
+
+  // Whether we are on the grid or not.
+  bool on_grid_ = false;
 };
 
 }  //  automata
