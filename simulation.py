@@ -77,7 +77,7 @@ class Simulation:
       self.__grid_objects.append(organism)
 
       # Add a visualization for the organism.
-      visualization.GridObjectVisualization(self.__grid_vis, organism, "green")
+      visualization.GridObjectVisualization(self.__grid_vis, organism)
 
     # Now run the simulation.
     while True:

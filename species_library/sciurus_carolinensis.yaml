@@ -1,0 +1,14 @@
+CommonName: "Eastern Gray Squirrel"
+
+Taxonomy:
+  Domain: "Eukarya"
+  Kingdom: "Animalia"
+  Phylum: "Chordata"
+  Class: "Mammalia"
+  Order: "Rodentia"
+  Family: "Sciuridae"
+  Genus: "Sciurus"
+  Species: "Carolinensis"
+
+Visualization:
+  Color: "#6f6f69"

@@ -9,3 +9,6 @@ Taxonomy:
   Family: "Poaceae"
   Genus: "Agrostis"
   Species: "Stolonifera"
+
+Visualization:
+  Color: "#009933"

@@ -105,11 +105,13 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Updates the position of the organism. """
   def update_position(self):
     if not self._object.UpdatePosition():
-      logger.log_and_raise("Updating organism %d position failed." % \
-          (self.get_index()))
+      logger.log_and_raise(OrganismError,
+          "Updating organism %d position failed." % (self.get_index()))
 
   """ Runs the default conflict handler on this organism. """
   def default_conflict_handler(self):
+    logger.info("Using default conflict handler for %d." % (self.get_index()))
+
     if not self._object.DefaultConflictHandler():
       # This is actually a significant error, because we either failed for a
       # reason other than being conflicted or failed to resolve the conflict.
@@ -120,3 +122,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Get the handlers that apply to this organism. """
   def get_handlers(self):
     return self.__handlers
+
+  """ Returns: The scientific name of the organism. (genus species) """
+  def scientific_name(self):
+    return "%s %s" % (self.Taxonomy.Genus, self.Taxonomy.Species)

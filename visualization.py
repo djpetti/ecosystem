@@ -1,5 +1,6 @@
 from tkinter import *
 import logging
+import random
 
 
 logger = logging.getLogger(__name__)
@@ -169,13 +170,29 @@ class GridVisualization:
 
 """ These represent objects that move around on the grid visualization. """
 class GridObjectVisualization:
+  # A dictionary of the selected colors for each species.
+  used_colors = {}
+
   """ grid_object: Specifies a grid_object that this visualization is linked to.
-  grid: The grid visualization that this object should appear on.
-  color: What color the object is on the grid. """
-  def __init__(self, grid, grid_object, color):
+  grid: The grid visualization that this object should appear on. """
+  def __init__(self, grid, grid_object):
     self.__object = grid_object
     self.__grid = grid
-    self.__color = color
+
+    # Use the specified color, or choose a random one.
+    try:
+      self.__color = grid_object.Visualization.Color
+    except AttributeError:
+      if grid_object.scientific_name() not in self.used_colors.keys():
+        # Pick a new color for the species.
+        self.__color = "#%02X%02X%02X" % \
+            (random.randint(0, 255), random.randint(0, 255),
+             random.randint(0, 255))
+        self.used_colors[grid_object.scientific_name()] = self.__color
+      else:
+        # Use the same color.
+        self.__color = self.used_colors[grid_object.scientific_name()]
+
     logger.debug("Making visualization for object %d." % \
         (self.__object.get_index()))
 

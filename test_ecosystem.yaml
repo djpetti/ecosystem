@@ -13,3 +13,6 @@ Organisms:
     Library: "species_library"
     # Quantity of this species to place.
     Quantity: 25
+  - Name: "sciurus carolinensis"
+    Library: "species_library"
+    Quantity: 25
