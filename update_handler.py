@@ -74,7 +74,7 @@ class UpdateHandler:
   Returns: True if we should handle this organism, false if we shouldn't. """
   def dynamic_filter(self, organism):
     # By default, do nothing.
-    pass
+    return True
 
   """ Runs the actual body of the handler. This is designed to be implemented by
   the user in superclasses.
@@ -116,15 +116,34 @@ class AnimalHandler(UpdateHandler):
   def __init__(self):
     super().__init__()
 
-    self.filter_attribute("Taxonomy.Kingdom", "Opisthokonta")
+    self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
 
   def run(self, organism):
     # Update animal position.
+    logger.debug("Old position of %d: %s" % \
+        (organism.get_index(), organism.get_position()))
+
     try:
       organism.update_position()
     except OrganismError:
       # Check to see if we have a conflict we can resolve.
       organism.default_conflict_handler()
+
+    logger.debug("New position of %d: %s" % \
+        (organism.get_index(), organism.get_position()))
+
+""" Handler for plants. """
+class PlantHandler(UpdateHandler):
+  def __init__(self):
+    super().__init__()
+
+    self.filter_attribute("Taxonomy.Kingdom", "Plantae")
+
+  def run(self, organism):
+    # Request that the plant stays in the same place. (If we don't do this, it
+    # won't generate a conflict if something else tries to move here.)
+    logger.debug("Plant position: %s" % (str(organism.get_position())))
+    organism.set_position(organism.get_position())
 
 
 # Go and register all the update handlers.
