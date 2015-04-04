@@ -26,8 +26,8 @@ class MovementFactor {
   int GetX();
   bool SetY(int y);
   int GetY();
-  inline void SetStrength(int strength) { strength_ = strength; }
-  inline int GetStrength() { return strength_; }
+  void SetStrength(int strength) { strength_ = strength; }
+  int GetStrength() { return strength_; }
   void SetVisibility(int visibility) { visibility_ = visibility; }
   int GetVisibility() { return visibility_; }
   void SetOrganism(Organism *organism) { organism_ = organism; }

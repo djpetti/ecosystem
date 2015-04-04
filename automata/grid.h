@@ -50,7 +50,7 @@ class Grid {
   // everyday operations should be absolutely minimized.
   // x: The x coordinate of the location to purge.
   // y: The y coordinate of the location to purge.
-  inline void ForcePurgeOccupant(int x, int y) {
+  void ForcePurgeOccupant(int x, int y) {
     Cell *cell = &grid_[x * x_size_ + y];
 
     if (cell->NewObject == cell->Object) {
@@ -61,7 +61,7 @@ class Grid {
   // x: The x coordinate of the cell's location.
   // y: The y coordinate of the cell's location.
   // Returns: The occupant of the cell, or nullptr if that cell has no occupant.
-  inline GridObject *GetOccupant(int x, int y) {
+  GridObject *GetOccupant(int x, int y) {
     return grid_[x * x_size_ + y].Object;
   }
   // Gets any occupant pending insertion at this cell.
@@ -74,7 +74,7 @@ class Grid {
   // x: The x coordinate of the cell's location.
   // y: The y coordinate of the cell's location.
   // Returns: The contents of the cell's conflicted slot.
-  inline GridObject *GetConflict(int x, int y) const {
+  GridObject *GetConflict(int x, int y) const {
     return grid_[x * x_size_ + y].ConflictedObject;
   }
   // Clears an object that is pending insertion at this cell. It will not
@@ -91,7 +91,7 @@ class Grid {
   // x: The x coordinate of the cell.
   // y: The y coordinate of the cell.
   // blacklist: The blacklist status to set.
-  inline void SetBlacklisted(int x, int y, bool blacklist) {
+  void SetBlacklisted(int x, int y, bool blacklist) {
     grid_[x * x_size_ + y].Blacklisted = blacklist;
   }
   // Gets the occupants of the locations in the extended neighborhood around
@@ -221,7 +221,7 @@ class Grid {
   void RemoveUnusable(::std::vector<int> *xs, ::std::vector<int> *ys);
 
   // Returns whether or not the underlying array is initialized.
-  inline bool IsInitialized() { return initialized_; }
+  bool IsInitialized() { return initialized_; }
 
   // Whether or not the underlying array is initialized.
   bool initialized_ = false;

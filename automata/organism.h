@@ -20,14 +20,14 @@ class Organism : public GridObject {
   Organism(Grid *grid, int index);
   // Set organism's vision.
   // vision: Organism's new vision.
-  inline void set_vision(int vision) { vision_ = vision; }
+  void set_vision(int vision) { vision_ = vision; }
   // Returns: Organism's vision.
-  inline int get_vision() const { return vision_; }
+  int get_vision() const { return vision_; }
   // Set organism's speed.
   // speed: Organism's new speed.
-  inline void set_speed(int speed) { speed_ = speed; }
+  void set_speed(int speed) { speed_ = speed; }
   // Returns: Organism's speed.
-  inline int get_speed() const { return speed_; }
+  int get_speed() const { return speed_; }
   // Calculates if the organism should move, and where it should move.
   // use_x: Allows user to specify a custom position to calculate movement from.
   // use_y: See use_x.
