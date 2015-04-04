@@ -51,4 +51,6 @@ class Grid {
   void GetConflicted(::std::vector<GridObject *> *OUTPUT,
       ::std::vector<GridObject *> *OUTPUT);
   bool Update();
+  double scale() const;
+  void set_scale(double scale);
 };

@@ -12,3 +12,6 @@ Taxonomy:
 
 Visualization:
   Color: "#009933"
+
+# Approximate size in meters.
+Scale: 0.5

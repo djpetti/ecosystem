@@ -12,6 +12,13 @@ except ImportError:
 from organism import Organism
 
 
+class LibraryError(Exception):
+  def __init__(self, value):
+    self.__value = value
+  def __str__(self):
+    return repr(self.__value)
+
+
 """ Class designed for importing and managing species from a species library.
 """
 class Library:
@@ -39,4 +46,14 @@ class Library:
 
     organism = Organism(grid, index, position)
     organism.set_attributes(data)
+
+    if grid.scale() < 0:
+      # This is the first organism we added.
+      logger.info("Setting grid scale to %f." % (organism.Scale))
+      grid.set_scale(organism.Scale)
+    elif organism.Scale != grid.scale():
+      logger.log_and_raise(LibraryError,
+          "Mismatch between object scale %f and grid scale %f." % \
+          (organism.Scale, grid.scale()))
+
     return organism

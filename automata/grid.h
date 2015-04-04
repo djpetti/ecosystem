@@ -137,6 +137,11 @@ class Grid {
   // conflicted with the object at the same index in objects1.
   void GetConflicted(::std::vector<GridObject *> *objects1,
                      ::std::vector<GridObject *> *objects2);
+  // Returns the current scale of the grid.
+  double scale() const { return grid_scale_; }
+  // Sets the scale of the grid.
+  // scale: The length of one side of a grid square.
+  void set_scale(double scale) { grid_scale_ = scale; }
 
  private:
   friend class testing::AutomataTest_MotionTest_Test;
@@ -230,6 +235,8 @@ class Grid {
   int y_size_;
   // A pointer to the underlying grid array.
   Cell *grid_;
+  // The size of one side of a grid square.
+  double grid_scale_ = -1;
 };
 
 }  // namespace automata
