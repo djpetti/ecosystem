@@ -168,6 +168,10 @@ class GridVisualization:
 
     self.__window.update()
 
+  """ Returns: All the grid objects in this visualization. """
+  def get_grid_objects(self):
+    return self.__grid_objects
+
 """ These represent objects that move around on the grid visualization. """
 class GridObjectVisualization:
   # A dictionary of the selected colors for each species.
@@ -241,3 +245,68 @@ class GridObjectVisualization:
     x = (coordinates[0] + coordinates[2]) / 2.0
     y = (coordinates[1] + coordinates[3]) / 2.0
     return (x, y)
+
+  """ Returns: The underlying grid object that this visualization represents.
+  """
+  def get_underlying_object(self):
+    return self.__object
+
+  """ Returns: The color of the visualization. """
+  def get_color(self):
+    return self.__color
+
+""" A nifty display pane that shows what species each little dot on the grid
+represents. """
+class Key:
+  # How tall each entry in the key is in pixels.
+  _ENTRY_HEIGHT = 50
+
+  """ visualization: The grid visualization that this key corresponds to. """
+  def __init__(self, visualization):
+    self.__parent = visualization
+
+    # Where the start of our next entry should be.
+    self.__entry_position = 0
+    # What species we already have in our key.
+    self.__known_species = []
+
+    # Create a separate window.
+    self.__window = Tk()
+    self.__canvas = Canvas(self.__window, width = 200,
+                           height = self.__window.winfo_screenwidth())
+    self.__canvas.pack()
+
+    for visualization in self.__parent.get_grid_objects():
+      grid_object = visualization.get_underlying_object()
+      if hasattr(grid_object, "scientific_name"):
+        # This is an organism which we want to display.
+        if grid_object.scientific_name() not in self.__known_species:
+          self.__add_entry(visualization)
+
+          self.__known_species.append(grid_object.scientific_name())
+
+  """ Adds an entry to the table in the key for a new species.
+  visualization: A grid object visualization representing a member of this
+  species. """
+  def __add_entry(self, visualization):
+    color = visualization.get_color()
+    grid_object = visualization.get_underlying_object()
+
+    # Draw the icon.
+    center_y = self.__entry_position + self._ENTRY_HEIGHT / 2
+    self.__canvas.create_oval(15, center_y - 10, 35, center_y + 10,
+        fill = color, outline = color)
+
+    # Draw the name.
+    self.__canvas.create_text(112.5, center_y,
+                              text = grid_object.scientific_name())
+
+    # Draw the lower line.
+    line_y = self.__entry_position + self._ENTRY_HEIGHT
+    self.__canvas.create_line(0, line_y, 200, line_y, fill = "gray")
+
+    self.__entry_position += self._ENTRY_HEIGHT
+
+  """ Updates the underlying tkinter window. """
+  def update(self):
+    self.__window.update()

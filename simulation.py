@@ -79,6 +79,9 @@ class Simulation:
       # Add a visualization for the organism.
       visualization.GridObjectVisualization(self.__grid_vis, organism)
 
+    # Now that the visualization is populated, draw a key for it.
+    self.__key = visualization.Key(self.__grid_vis)
+
     # Now run the simulation.
     while True:
       PhasedLoop.limit_fastest()
@@ -88,6 +91,7 @@ class Simulation:
         self.__run_iteration()
       if graphics_limiter.should_run():
         self.__grid_vis.update()
+        self.__key.update()
 
   """ Completely update the grid a single time. """
   def __run_iteration(self):
