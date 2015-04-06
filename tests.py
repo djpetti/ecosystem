@@ -56,6 +56,10 @@ class TestOrganism(unittest.TestCase):
 
 """ Tests the library class. """
 class TestLibrary(unittest.TestCase):
+  # Example yaml that gets used for testing.
+  _TEST_YAML = {"key1": 1, "key2": {"key3": 3, "key4": {"key5": 5}},
+                "key6": 6}
+
   def setUp(self):
     self.__library = library.Library("test_library")
     self.__grid = C_Grid(10, 10)
@@ -79,11 +83,16 @@ class TestLibrary(unittest.TestCase):
         "  Order: TestOrder\n" \
         "  Family: TestFamily\n" \
         "  Genus:  TestGenus\n" \
-        "  Species: TestSpecies\n"
+        "  Species: TestSpecies\n" \
+        "Scale: 1\n"
 
     test_file = open("test_library/test_species.yaml", "w")
     test_file.write(species_yaml)
     test_file.close()
+
+    # Empty defaults file.
+    defaults_file = open("test_library/defaults.yaml", "w")
+    defaults_file.close()
 
   """ Can we load an organism successfully? """
   def test_load(self):
@@ -98,16 +107,43 @@ class TestLibrary(unittest.TestCase):
     self.assertEqual(organism.CommonName, "Test Species")
     self.assertEqual(organism.Taxonomy.Domain, "TestDomain")
 
+  """ Do the flatten_tree and expand_tree functions work properly? """
+  def test_flatten_tree(self):
+    expected_paths = [["key1", 1], ["key2", "key3", 3],
+                      ["key2", "key4", "key5", 5], ["key6", 6]]
+
+    paths = library._flatten_tree(self._TEST_YAML)
+    # They could be ordered differently.
+    for path in paths:
+      self.assertIn(path, expected_paths)
+
+    # Unflatten it again.
+    tree = library._expand_tree(paths)
+    self.assertEqual(tree, self._TEST_YAML)
+
+  """ Does the merge_trees function work properly? """
+  def test_merge_trees(self):
+    defaults_yaml = {"key1": 7, "key7": 7, "key2": {"key4": 8, "key8": 8}}
+    expected_results = {"key1": 1, "key7": 7,
+                        "key2": {"key3": 3, "key4": {"key5": 5}, "key8": 8},
+                        "key6": 6}
+
+    merged_tree = library._merge_trees(self._TEST_YAML, defaults_yaml)
+    self.assertEqual(expected_results, merged_tree)
+
 
 """ Tests for visualizations. """
 class TestVisualizations(unittest.TestCase):
   def setUp(self):
+    test_attributes = {"Visualization": {"Color": "#00FF00"}}
+
     self.__grid = C_Grid(100, 100)
-    self.__grid_object = grid_object.GridObject(self.__grid, 0, 5, 5)
+    self.__grid_object = organism.Organism(self.__grid, 0, (5, 5))
+    self.__grid_object.set_attributes(test_attributes)
 
     self.__grid_vis = visualization.GridVisualization(100, 100)
     self.__grid_object_vis = visualization.GridObjectVisualization(
-        self.__grid_vis, self.__grid_object, "green")
+        self.__grid_vis, self.__grid_object)
 
   """ Can we move the view around correctly? """
   def test_movement(self):

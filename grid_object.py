@@ -17,12 +17,11 @@ class GridObjectError(Exception):
 Basically a thin wrapper around the C++ version of this class."""
 class GridObject(C_GridObject):
   """ index: The object's index in the simulation's grid_objects array.
-  x: The x coordinate of the object.
-  y: The y coordinate of the object. """
-  def __init__(self, grid, index, x, y):
+  position: The coordinates of the objects."""
+  def __init__(self, grid, index, position):
     self._object = C_GridObject(grid, index);
 
-    if not self._object.Initialize(x, y):
+    if not self._object.Initialize(position[0], position[1]):
       raise GridObjectError("Failed to initialize grid object.")
 
   """ Does whatever changes that are required for this object from one iteration
