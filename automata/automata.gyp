@@ -10,5 +10,16 @@
         'grid_object.cc',
       ],
     },
+    {
+      'target_name': 'automata_test',
+      'type': 'executable',
+      'dependencies': [
+        'automata',
+        '<(externals):gtest',
+      ],
+      'sources': [
+        'automata_test.cc',
+      ],
+    },
   ],
 }

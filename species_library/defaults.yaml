@@ -2,13 +2,16 @@ Metabolism:
   Photosynthesis:
     # The efficiency numbers come from this page:
     # http://en.wikipedia.org/wiki/Photosynthetic_efficiency
-    # Default photosynthetic efficiency (C3)
+    # Default light-to-biomass photosynthetic efficiency (C3)
     C3Efficiency: 0.02
     # C4
     C4Efficiency: 0.06
-    # Average sunlight intensity (W/m^2). This number comes from here:
-    # http://en.wikipedia.org/wiki/Sunlight
-    SolarEnergy: 1120
-    # Gibbs free energy for converting one mole of CO2 to C6H12O6. (kCal)
-    CO2GlucoseGibbsEnergy: 114
 
+  Plant:
+    # The following 3 percentages are from here:
+    # http://ncsungrant.sdstate.org/uploads/publications/SGINC1-07.pdf
+    # Note that they will probably be different for non-herbacious plants.
+    # Percentage of plant dry matter that is cellulose.
+    PercentCellulose: 0.4
+    PercentHemicellulose: 0.3
+    PercentLignin: 0.2
