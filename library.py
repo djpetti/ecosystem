@@ -27,6 +27,11 @@ defaults: The default values for anything not specified in the target tree.
 Returns: A new version of the target tree, with the defaults incorporated.
 """
 def _merge_trees(target, defaults):
+  # An edge case if if we have no defaults, in which case, we just return
+  # targets.
+  if not defaults:
+    return target
+
   # First, flatten both trees.
   target_paths = _flatten_tree(target)
   default_paths = _flatten_tree(defaults)
@@ -145,12 +150,12 @@ class Library:
     name = name.replace(" ", "_")
 
     organism_file = open("%s/%s.yaml" % (self.__library, name))
-    data = yaml.load(organism_file, Loader = Loader)
+    data = yaml.load(organism_file, Loader=Loader)
     organism_file.close()
 
     # Read defaults and use them to populate anything not specified.
     defaults_file = open("%s/defaults.yaml" % (self.__library))
-    defaults = yaml.load(defaults_file, Loader = Loader)
+    defaults = yaml.load(defaults_file, Loader=Loader)
     defaults_file.close()
 
     # Incorporate the defaults into our original data.

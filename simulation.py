@@ -79,6 +79,10 @@ class Simulation:
       # Add a visualization for the organism.
       visualization.GridObjectVisualization(self.__grid_vis, organism)
 
+    # Update the grid to bake everything in its initial position.
+    if not self.__grid.Update():
+      logger.log_and_raise(SimulationError, "Initial grid update failed.")
+
     # Now that the visualization is populated, draw a key for it.
     self.__key = visualization.Key(self.__grid_vis)
 
@@ -107,7 +111,7 @@ class Simulation:
 
     # Update the grid.
     if not self.__grid.Update():
-      logger.log_and_raise("Grid Update() failed unexpectedly.")
+      logger.log_and_raise(SimulationError, "Grid Update() failed unexpectedly.")
 
     self.__iteration.value += 1
     logger.debug("Running iteration %d." % (self.__iteration.value))
