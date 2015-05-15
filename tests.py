@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import copy
-import gc
 import os
 import shutil
 import unittest
@@ -16,9 +15,6 @@ import library
 import organism
 import update_handler
 import visualization
-
-
-#gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_COLLECTABLE)
 
 
 """ Tests the organism class. """
