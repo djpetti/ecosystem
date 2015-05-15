@@ -6,14 +6,11 @@ import os
 import shutil
 import unittest
 
-import sys
-sys.path.append("swig_modules")
-
 from modified_logger import Logger
 # This has to happen before anything we import tries to create a logger.
 Logger.set_path("test_log.log")
 
-from automata import Grid as C_Grid
+from swig_modules.automata import Grid as C_Grid
 import grid_object
 import library
 import organism

@@ -11,6 +11,7 @@ import logging
 import sys
 
 from organism import OrganismError
+from swig_modules.automata import PlantMetabolism
 import user_handlers
 
 
@@ -140,6 +141,47 @@ class PlantHandler(UpdateHandler):
     self.filter_attribute("Taxonomy.Kingdom", "Plantae")
 
   def run(self, organism):
+    # Initialize the metabolism simulator if we haven't already.
+    if not organism.metabolism:
+      logger.debug("Initializing metabolism simulation for organism %d." %
+                   (organism.get_index()))
+
+      # Figure out efficiency.
+      if organism.Metabolism.Photosynthesis.Pathway == "C3":
+        efficiency = organism.Metabolism.Photosynthesis.C3Efficiency
+      elif organism.Metabolism.Photosynthesis.Pathway == "C4":
+        efficiency = organism.Metabolism.Photosynthesis.C4Efficiency
+      else:
+        raise ValueError("Invalid photosynthesis pathway: '%s'" % \
+                         (organism.Metabolism.Photosynthesis.Pathway))
+
+      mass = organism.Metabolism.Plant.SeedlingMass
+
+      # Figure out the amount of leaf area.
+      try:
+        area_mean = organism.Metabolism.Plant.MeanLeafArea
+      except AttributeError:
+        logger.warning("Using default leaf area mean for plant '%d'." % \
+                       (organism.get_index()))
+        # Calculate a plausible leaf area based on the scale.
+        area_mean = 0.5 * (organism.Scale ** 2)
+      try:
+        area_stddev = organism.Metabolism.Plant.LeafAreaStddev
+      except AttributeError:
+        logger.warning("Using default leaf area stddev for plant '%d'." % \
+                       (organism.get_index()))
+        # Calculate a plausible leaf standard deviation based on the area.
+        area_stddev = area_mean * 0.3
+
+      cellulose = organism.Metabolism.Plant.Cellulose
+      hemicellulose = organism.Metabolism.Plant.Hemicellulose
+      lignin = organism.Metabolism.Plant.Lignin
+
+      args = [mass, efficiency, area_mean, area_stddev, cellulose,
+              hemicellulose, lignin]
+      logger.debug("Constructing PlantMetabolism with args: %s" % (args))
+      organism.metabolism = PlantMetabolism(*args)
+
     # Request that the plant stays in the same place. (If we don't do this, it
     # won't generate a conflict if something else tries to move here.)
     logger.debug("Plant position: %s" % (str(organism.get_position())))

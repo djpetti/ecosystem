@@ -13,6 +13,7 @@
       ],
       'dependencies': [
         '<(DEPTH)/automata/automata.gyp:automata',
+        '<(DEPTH)/automata/metabolism/metabolism.gyp:metabolism'
       ],
       'actions': [
         {
@@ -26,6 +27,8 @@
               '<(DEPTH)/automata/movement_factor.h',
               '<(DEPTH)/automata/organism.cc',
               '<(DEPTH)/automata/organism.h',
+              '<(DEPTH)/automata/metabolism/plant_metabolism.cc',
+              '<(DEPTH)/automata/metabolism/plant_metabolism.h'
             ],
           },
           'action_name': 'swig',

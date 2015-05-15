@@ -7,11 +7,17 @@ Metabolism:
     # C4
     C4Efficiency: 0.06
 
+    # What photosynthesis pathway the plant uses.
+    Pathway: "C3"
+
   Plant:
     # The following 3 percentages are from here:
     # http://ncsungrant.sdstate.org/uploads/publications/SGINC1-07.pdf
     # Note that they will probably be different for non-herbacious plants.
     # Percentage of plant dry matter that is cellulose.
-    PercentCellulose: 0.4
-    PercentHemicellulose: 0.3
-    PercentLignin: 0.2
+    Cellulose: 0.4
+    Hemicellulose: 0.3
+    Lignin: 0.2
+
+    # Starting mass of organism seedling. (kG)
+    SeedlingMass: 0.05

@@ -25,6 +25,7 @@ class PlantMetabolism : public Metabolism {
   PlantMetabolism(double mass, double efficiency, double area_mean,
                   double area_stddev, double cellulose, double hemicellulose,
                   double lignin);
+  virtual ~PlantMetabolism() = default;
 
   virtual void Update(int time);
   virtual void UseEnergy(double amount);

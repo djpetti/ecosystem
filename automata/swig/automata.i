@@ -6,7 +6,9 @@
 #include "../grid.h"
 #include "../grid_object.h"
 #include "../organism.h"
+#include "../metabolism/plant_metabolism.h"
 using namespace automata;
+using namespace automata::metabolism;
 %}
 
 class GridObject {
@@ -53,4 +55,16 @@ class Grid {
   bool Update();
   double scale() const;
   void set_scale(double scale);
+};
+
+class PlantMetabolism {
+ public:
+  PlantMetabolism(double mass, double efficiency, double area_mean,
+                  double area_stddev, double cellulose, double hemicellulose,
+                  double lignin);
+  ~PlantMetabolism();
+  void Update(int time);
+  void UseEnergy(double amount);
+  double mass() const;
+  double energy() const;
 };

@@ -7,10 +7,7 @@ class OrganismError(Exception):
 
 import logging
 
-import sys
-sys.path.append("swig_modules")
-
-from automata import Organism as C_Organism
+from swig_modules.automata import Organism as C_Organism
 from update_handler import UpdateHandler
 import grid_object
 
@@ -57,6 +54,10 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Handlers that apply to this organism.
     self.__handlers = []
+
+    # Metabolism handler for this organism. A handler will initialize it,
+    # because it is unique depending on the organism.
+    self.metabolism = None
 
     # Underlying C++ organism. This object is shared with the Python GridObject
     # superclass, which makes sense seeing that the C++ version of Organism

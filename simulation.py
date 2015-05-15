@@ -9,12 +9,10 @@ from multiprocessing import Process, Value
 
 import logging
 import random
-import sys
-sys.path.append("swig_modules")
 
 from library import Library
 from phased_loop import PhasedLoop
-import automata
+from swig_modules import automata
 import visualization
 
 

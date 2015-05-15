@@ -1,9 +1,6 @@
 import logging
 
-import sys
-sys.path.append("swig_modules")
-
-from automata import GridObject as C_GridObject
+from swig_modules.automata import GridObject as C_GridObject
 
 logger = logging.getLogger(__name__)
 
