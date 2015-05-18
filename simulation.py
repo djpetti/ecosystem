@@ -21,11 +21,13 @@ logger = logging.getLogger(__name__)
 
 """ Controls a simulation. """
 class Simulation:
-  """ x_size: The horizontal size of this simulation's grid. """
-  """ y_size: The vertical size of this simulation's grid. """
-  def __init__(self, x_size, y_size):
+  """ x_size: The horizontal size of this simulation's grid.
+  y_size: The vertical size of this simulation's grid.
+  iteration_time: How much time each iteration encompasses. """
+  def __init__(self, x_size, y_size, iteration_time):
     self.__x_size = x_size
     self.__y_size = y_size
+    self.__iteration_time = iteration_time
 
     # A list of organisms to get loaded as soon as we fork.
     self.__to_load = []
@@ -70,7 +72,7 @@ class Simulation:
       organism = library.load_organism(name, self.__grid,
           len(self.__grid_objects), (x_pos, y_pos))
       logger.info("Adding new grid object with index %d at (%d, %d)." %
-          (len(self.__grid_objects), x_pos, y_pos));
+          (len(self.__grid_objects), x_pos, y_pos))
 
       self.__grid_objects.append(organism)
 
@@ -100,8 +102,8 @@ class Simulation:
     # Update the status of all objects.
     to_delete = []
     for grid_object in self.__grid_objects:
-      if not grid_object.update():
-        # Organism died. Remove it.
+      if not grid_object.update(self.__iteration_time):
+        # Organism died. Remove it. (Already logged.)
         to_delete.append(grid_object)
 
     for organism in to_delete:

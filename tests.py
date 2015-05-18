@@ -212,7 +212,7 @@ class TestUpdateHandler(unittest.TestCase):
         return True
       return False
 
-    def run(self, organism):
+    def run(self, organism, *args):
       # Kind of a dumb way to detect if the handler ran, but it works.
       raise RuntimeError("Ran handler.")
 
@@ -248,15 +248,16 @@ class TestUpdateHandler(unittest.TestCase):
     self.assertNotIn(self.__test_handler, handlers)
 
     # Organism 3 should not get past the static filter.
-    self.__organism3.update()
+    self.__organism3.update(0)
 
   """ Do dynamic filters work properly? """
   def test_dynamic_filter(self):
     # The dynamic filter should block this one.
-    self.__organism1.update()
+    self.__organism1.update(0)
 
     # The other one should work.
-    self.assertRaises(RuntimeError, self.__organism2.update)
+    with self.assertRaises(RuntimeError):
+      self.__organism2.update(0)
 
 if __name__ == "__main__":
   unittest.main()

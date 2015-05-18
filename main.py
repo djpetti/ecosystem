@@ -37,7 +37,10 @@ def main():
 
   if ("GridXSize" not in config and "GridYSize" not in config):
     logger.fatal("Invalid config, needs GridXSize and GridYSize")
-  simulation = Simulation(config["GridXSize"], config["GridYSize"])
+  if "IterationTime" not in config:
+    logger.fatal("Invalid config, needs IterationTime.")
+  simulation = Simulation(config["GridXSize"], config["GridYSize"],
+                          config["IterationTime"])
 
   # Add them to the simulation.
   for organism in config["Organisms"]:

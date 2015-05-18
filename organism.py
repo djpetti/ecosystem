@@ -67,9 +67,10 @@ class Organism(grid_object.GridObject, AttributeHelper):
       logger.log_and_raise(OrganismError, "Failed to initialize organism.")
 
   """ Updates the status of this organism. Should be run every iteration.
+  iteration_time: Simulation time since the last iteration.
   Returns: True if it proceeds normally, false if this organism is dead or
-  otherwise defunct."""
-  def update(self):
+  otherwise defunct. """
+  def update(self, iteration_time):
     logger.debug("Updating organism %d." % (self.get_index()))
 
     if not self.is_alive():
@@ -79,7 +80,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Run handlers.
     for handler in self.__handlers:
-      handler.handle_organism(self)
+      handler.handle_organism(self, iteration_time)
 
     return True
 

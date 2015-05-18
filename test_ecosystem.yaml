@@ -4,6 +4,9 @@
 GridXSize: 100
 GridYSize: 100
 
+# How much time one grid iteration encompasses. (s)
+IterationTime: 10
+
 # This section specifies a list of species to put on the grid at the start of
 # the simulation. Each organism will be placed randomly to begin with.
 Organisms:

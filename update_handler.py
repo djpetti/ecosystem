@@ -79,8 +79,10 @@ class UpdateHandler:
 
   """ Runs the actual body of the handler. This is designed to be implemented by
   the user in superclasses.
-  organism: The organism to run the handler on. """
-  def run(self, organism):
+  organism: The organism to run the handler on.
+  iteration_time: How much simulation time passed since the last time we ran the
+                  handler. """
+  def run(self, organism, iteration_time):
     raise NotImplementedError("'run' must be implemented by subclass.")
 
   """ Determines whether a paticular organism meets the static filtering
@@ -106,10 +108,11 @@ class UpdateHandler:
     return True
 
   """ Checks the dynamic filters, and if the organism passes, it calls run.
-  organism: The organism to run the handler on. """
-  def handle_organism(self, organism):
+  organism: The organism to run the handler on.
+  iteration_time: Simulation time since when we last ran this. """
+  def handle_organism(self, organism, iteration_time):
     if self.dynamic_filter(organism):
-      self.run(organism)
+      self.run(organism, iteration_time)
 
 
 """ Handler for animals. """
@@ -119,7 +122,7 @@ class AnimalHandler(UpdateHandler):
 
     self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
 
-  def run(self, organism):
+  def run(self, organism, *args):
     # Update animal position.
     logger.debug("Old position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
@@ -133,6 +136,7 @@ class AnimalHandler(UpdateHandler):
     logger.debug("New position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
 
+
 """ Handler for plants. """
 class PlantHandler(UpdateHandler):
   def __init__(self):
@@ -140,7 +144,7 @@ class PlantHandler(UpdateHandler):
 
     self.filter_attribute("Taxonomy.Kingdom", "Plantae")
 
-  def run(self, organism):
+  def run(self, organism, iteration_time):
     # Initialize the metabolism simulator if we haven't already.
     if not organism.metabolism:
       logger.debug("Initializing metabolism simulation for organism %d." %
@@ -186,6 +190,11 @@ class PlantHandler(UpdateHandler):
     # won't generate a conflict if something else tries to move here.)
     logger.debug("Plant position: %s" % (str(organism.get_position())))
     organism.set_position(organism.get_position())
+
+    # Update the metabolism simulator for this time step.
+    organism.metabolism.Update(iteration_time)
+    logger.debug("Plant mass: %f, energy: %f" % \
+        (organism.metabolism.mass(), organism.metabolism.energy()))
 
 
 # Go and register all the update handlers.
