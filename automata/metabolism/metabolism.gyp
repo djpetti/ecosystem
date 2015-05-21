@@ -5,6 +5,7 @@
       'type': 'static_library',
       'sources': [
         'plant_metabolism.cc',
+        'animal_metabolism.cc',
       ],
     },
     {
@@ -12,6 +13,17 @@
       'type': 'executable',
       'sources': [
         'plant_metabolism_test.cc',
+      ],
+      'dependencies': [
+        'metabolism',
+        '<(externals):gtest',
+      ],
+    },
+    {
+      'target_name': 'animal_metabolism_test',
+      'type': 'executable',
+      'sources': [
+        'animal_metabolism_test.cc',
       ],
       'dependencies': [
         'metabolism',
