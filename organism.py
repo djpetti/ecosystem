@@ -129,3 +129,8 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Returns: The scientific name of the organism. (genus species) """
   def scientific_name(self):
     return "%s %s" % (self.Taxonomy.Genus, self.Taxonomy.Species)
+
+  """ Causes the organism to die. """
+  def die(self):
+    logger.info("Organism %d is dying." % (self.get_index()))
+    self._object.Die()

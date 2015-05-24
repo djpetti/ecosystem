@@ -2,6 +2,8 @@ from tkinter import *
 import logging
 import random
 
+from organism import Organism
+
 
 logger = logging.getLogger(__name__)
 
@@ -163,8 +165,13 @@ class GridVisualization:
 
   """ Updates all the GridObjectVisualization's on this grid. """
   def update(self):
+    to_delete = []
     for grid_object in self.__grid_objects:
-      grid_object.update()
+      if not grid_object.update():
+        # Organism is dead. Get rid of the visualization.
+        to_delete.append(grid_object)
+    for organism in to_delete:
+      self.__grid_objects.remove(organism)
 
     self.__window.update()
 
@@ -208,6 +215,11 @@ class GridObjectVisualization:
     # Place the object initially.
     self.update()
 
+  """ Removes canvas object. """
+  def __del__(self):
+    canvas = self.__grid.get_canvas()
+    canvas.delete(self.__index)
+
   """ Draws the object in a specific location.
   position: Position on the grid to draw the object in, in the form (x, y). """
   def __draw(self, position):
@@ -225,10 +237,17 @@ class GridObjectVisualization:
       canvas.coords(self.__index, *coordinates)
 
   """ Checks if the object we are linked to has moved and update this object's
-  position accordingly. """
+  position accordingly.
+  Returns: True if it updates properly, False if object is now dead. """
   def update(self):
+    if isinstance(self.__object, Organism):
+      if not self.__object.is_alive():
+        logger.debug("Removing visualization because organism is dead.")
+        return False
+
     position = self.__object.get_position()
     self.__draw(position)
+    return True
 
   """ Moves the object visualization.
   x: How many pixels to move in the x directions.

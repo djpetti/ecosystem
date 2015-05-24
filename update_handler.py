@@ -157,6 +157,11 @@ class AnimalHandler(UpdateHandler):
     logger.debug("Animal mass: %f, Animal energy: %f" % \
                 (organism.metabolism.mass(), organism.metabolism.energy()))
 
+    # Organism should die if it runs out of energy.
+    if organism.metabolism.energy() <= 0:
+      logger.info("Killing organism due to lack of energy.")
+      organism.die()
+
 
 """ Handler for plants. """
 class PlantHandler(UpdateHandler):
@@ -216,6 +221,11 @@ class PlantHandler(UpdateHandler):
     organism.metabolism.Update(iteration_time)
     logger.debug("Plant mass: %f, energy: %f" % \
         (organism.metabolism.mass(), organism.metabolism.energy()))
+
+    # Organism should die if it runs out of energy.
+    if organism.metabolism.energy() <= 0:
+      logger.info("Killing organism due to lack of energy.")
+      organism.die()
 
 
 # Go and register all the update handlers.
