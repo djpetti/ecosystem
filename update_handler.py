@@ -11,7 +11,7 @@ import logging
 import sys
 
 from organism import OrganismError
-from swig_modules.automata import PlantMetabolism
+from swig_modules.automata import AnimalMetabolism, PlantMetabolism
 import user_handlers
 
 
@@ -122,7 +122,7 @@ class AnimalHandler(UpdateHandler):
 
     self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
 
-  def run(self, organism, *args):
+  def run(self, organism, iteration_time):
     # Update animal position.
     logger.debug("Old position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
@@ -135,6 +135,27 @@ class AnimalHandler(UpdateHandler):
 
     logger.debug("New position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
+
+    # Add metabolism object if we don't have it.
+    if not organism.metabolism:
+      logger.debug("Initializing metabolism simulation for organism %d." % \
+                   (organism.get_index()))
+
+      mass = organism.Metabolism.Animal.InitialMass
+      fat_mass = organism.Metabolism.Animal.InitialFatMass
+      body_temp = organism.Metabolism.Animal.BodyTemperature
+      scale = organism.Scale
+      drag_coefficient = organism.Metabolism.Animal.DragCoefficient
+
+      args = [mass, fat_mass, body_temp, scale, drag_coefficient,
+              iteration_time]
+      logger.debug("Constructing AnimalMetabolism with args: %s" % (args))
+      organism.metabolism = AnimalMetabolism(*args)
+
+    # Update the metabolism simulator for this time step.
+    organism.metabolism.Update(iteration_time)
+    logger.debug("Animal mass: %f, Animal energy: %f" % \
+                (organism.metabolism.mass(), organism.metabolism.energy()))
 
 
 """ Handler for plants. """

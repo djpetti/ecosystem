@@ -41,6 +41,7 @@ class AttributeHelper:
   def get_all_attributes(self):
     return self._attributes
 
+
 """ The Python representation of an organism. """
 class Organism(grid_object.GridObject, AttributeHelper):
   """ index: The index into the grid_objects array of the simulation this

@@ -7,6 +7,7 @@
 #include "../grid_object.h"
 #include "../organism.h"
 #include "../metabolism/plant_metabolism.h"
+#include "../metabolism/animal_metabolism.h"
 using namespace automata;
 using namespace automata::metabolism;
 %}
@@ -67,4 +68,18 @@ class PlantMetabolism {
   void UseEnergy(double amount);
   double mass() const;
   double energy() const;
+};
+
+class AnimalMetabolism {
+ public:
+  AnimalMetabolism(double mass, double fat_mass, double body_temp,
+                  double scale, double drag_coefficient, int iteration_time);
+  ~AnimalMetabolism();
+  void Update(int time);
+  void UseEnergy(double amount);
+  double mass() const;
+  double energy() const;
+
+  void Consume(const Metabolism &metabolism);
+  void Move(double distance);
 };

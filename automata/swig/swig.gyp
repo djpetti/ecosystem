@@ -19,6 +19,8 @@
         {
           'variables': {
             'libautomata_files': [
+              # We include the .h files so the swig library gets rebuilt when
+              # they get updated.
               '<(DEPTH)/automata/grid.cc',
               '<(DEPTH)/automata/grid.h',
               '<(DEPTH)/automata/grid_object.cc',
@@ -29,6 +31,8 @@
               '<(DEPTH)/automata/organism.h',
               '<(DEPTH)/automata/metabolism/plant_metabolism.cc',
               '<(DEPTH)/automata/metabolism/plant_metabolism.h'
+              '<(DEPTH)/automata/metabolism/animal_metabolism.cc',
+              '<(DEPTh)/automata/metabolism/animal_metabolism.h',
             ],
           },
           'action_name': 'swig',

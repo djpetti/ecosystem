@@ -15,3 +15,12 @@ Visualization:
 
 # Aproximate size in meters.
 Scale: 0.5
+
+Metabolism:
+  Animal:
+    # Average mass at birth. (kg)
+    InitialMass: 0.1
+    # Average mass of fat reserves at birth. (kg)
+    InitialFatMass: 0.03
+    # Body temperature. (K)
+    BodyTemperature: 310.65

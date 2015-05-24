@@ -21,3 +21,7 @@ Metabolism:
 
     # Starting mass of organism seedling. (kG)
     SeedlingMass: 0.05
+
+  Animal:
+    # Approximate drag coefficient of the animal.
+    DragCoefficient: 0.5
