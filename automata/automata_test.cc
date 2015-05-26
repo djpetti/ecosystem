@@ -35,7 +35,7 @@ TEST_F(AutomataTest, OccupantTest) {
 }
 
 TEST_F(AutomataTest, NeighborhoodTest) {
-  // Does getting the indices in a neighborhood work?
+  // Does getting the objects in a neighborhood work?
   // Set the extended neighborhood of the location in the middle of the grid to
   // be all ones.
   GridObject object(&grid_, 0);
@@ -50,12 +50,24 @@ TEST_F(AutomataTest, NeighborhoodTest) {
 
   ::std::vector<::std::vector<GridObject *>> neighborhood;
   EXPECT_TRUE(grid_.GetNeighborhood(6, 6, &neighborhood));
-  EXPECT_EQ(1, neighborhood.size());
+  EXPECT_EQ(1u, neighborhood.size());
 
   // Check that everything in the neighborhood is what we expect it to be.
   for (auto new_object : neighborhood[0]) {
     EXPECT_EQ(&object, new_object);
   }
+
+  // Remove all the extra pointers floating around the grid. It's really not
+  // designed for the same object to be baked at multiple locations on the grid,
+  // and if we don't do this, it really breaks stuff when it tries to destroy
+  // things.
+  for (int i = 5; i <= 7; ++i) {
+    grid_.SetOccupant(i, 5, nullptr);
+    grid_.SetOccupant(i, 7, nullptr);
+  }
+  grid_.SetOccupant(5, 6, nullptr);
+  grid_.SetOccupant(7, 6, nullptr);
+  ASSERT_TRUE(grid_.Update());
 }
 
 TEST_F(AutomataTest, OutOfBoundsTest) {
@@ -66,8 +78,8 @@ TEST_F(AutomataTest, OutOfBoundsTest) {
   EXPECT_FALSE(grid_.GetNeighborhoodLocations(-1, -1, &xs, &ys));
   // Putting it in a corner should truncate the neighborhood.
   EXPECT_TRUE(grid_.GetNeighborhoodLocations(0, 0, &xs, &ys));
-  EXPECT_EQ(3, xs.size());
-  EXPECT_EQ(3, ys.size());
+  EXPECT_EQ(3u, xs.size());
+  EXPECT_EQ(3u, ys.size());
 }
 
 TEST_F(AutomataTest, MotionTest) {
@@ -156,8 +168,8 @@ TEST_F(AutomataTest, MotionFactorsTest) {
   auto blacklist_xs = xs;
   auto blacklist_ys = ys;
   grid_.RemoveUnusable(&blacklist_xs, &blacklist_ys);
-  EXPECT_EQ(7, blacklist_xs.size());
-  EXPECT_EQ(7, blacklist_ys.size());
+  EXPECT_EQ(7u, blacklist_xs.size());
+  EXPECT_EQ(7u, blacklist_ys.size());
 
   // This same attractive factor should stop working if we set its visibility
   // low enough.
@@ -274,8 +286,8 @@ TEST_F(AutomataTest, ConflictResolutionTest) {
   // Now it should show up.
   EXPECT_EQ(&object1, grid_.GetConflict(2, 2));
   grid_.GetConflicted(&conflicts1, &conflicts2);
-  EXPECT_EQ(1, conflicts1.size());
-  EXPECT_EQ(1, conflicts2.size());
+  EXPECT_EQ(1u, conflicts1.size());
+  EXPECT_EQ(1u, conflicts2.size());
   EXPECT_TRUE(conflicts1[0] == &object1 || conflicts1[0] == &object2);
   EXPECT_TRUE(conflicts1[0] == &object2 || conflicts2[0] == &object2);
 
@@ -306,7 +318,7 @@ TEST_F(AutomataTest, ConflictResolutionTest) {
   EXPECT_TRUE(conflicts2.empty());
 }
 
-// The mechanism for requesting that a cell stay the same to the next cycle is
+// The mechanism for requesting that a cell stays the same to the next cycle is
 // kind of intricate. Does it work as planned?
 TEST_F(AutomataTest, StasisRequestTest) {
   GridObject object1(&grid_, 0);
@@ -343,6 +355,11 @@ TEST_F(AutomataTest, StasisRequestTest) {
   // At this point, we should get a conflict if we try to set it to object2
   // again.
   EXPECT_FALSE(grid_.SetOccupant(0, 0, &object2));
+
+  // Manually purge object2 from the pending slot. Since we're not using the
+  // grid_object methods to do this, it won't get cleaned up correctly otherwise
+  // and we'll end up with a dead pointer floating around the grid.
+  ASSERT_TRUE(grid_.PurgeNew(0, 0, &object2));
 }
 
 // Do things get cleaned up properly regardless of the order in which we delete
