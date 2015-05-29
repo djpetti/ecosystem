@@ -7,6 +7,7 @@
 
 #include "automata/grid.h"
 #include "automata/grid_object.h"
+#include "automata/macros.h"
 #include "automata/movement_factor.h"
 
 namespace automata {
@@ -71,6 +72,8 @@ class Organism : public GridObject {
   }
 
  private:
+  DISSALOW_COPY_AND_ASSIGN(Organism);
+
   // (Un)blacklists every space in an organism's neighborhood that contains
   // something that would generate a conflict if the organism tried to move
   // there. Conflict handlers will run at the end of a cycle when blacklisting

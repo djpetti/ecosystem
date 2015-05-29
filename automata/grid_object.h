@@ -2,6 +2,7 @@
 #define ECOSYSTEM_AUTOMATA_GRID_ITEM_H_
 
 #include "automata/grid.h"
+#include "automata/macros.h"
 
 namespace automata {
 
@@ -69,6 +70,9 @@ class GridObject {
 
   // Whether we are on the grid or not.
   bool on_grid_ = false;
+
+ private:
+  DISSALOW_COPY_AND_ASSIGN(GridObject);
 };
 
 }  //  automata

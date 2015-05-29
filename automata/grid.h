@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "automata/macros.h"
 #include "automata/movement_factor.h"
 
 // Defines functions for dealing with the grid at a low level.
@@ -144,6 +145,8 @@ class Grid {
   void set_scale(double scale) { grid_scale_ = scale; }
 
  private:
+  DISSALOW_COPY_AND_ASSIGN(Grid);
+
   friend class testing::AutomataTest_MotionTest_Test;
   friend class testing::AutomataTest_MotionFactorsTest_Test;
   friend class testing::AutomataTest_OutOfBoundsTest_Test;

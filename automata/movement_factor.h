@@ -1,6 +1,8 @@
 #ifndef ECOSYSTEM_AUTOMATA_MOVEMENT_FACTOR_H_
 #define ECOSYSTEM_AUTOMATA_MOVEMENT_FACTOR_H_
 
+#include "automata/macros.h"
+
 namespace automata {
 
 // Forward declaration to break cyclic dependency.
@@ -17,6 +19,10 @@ class MovementFactor {
   MovementFactor(int x, int y, int strength, int visibility);
   // Alternate constructor allows you to specify a source organism.
   MovementFactor(Organism *organism, int strength, int visibility);
+  // Copy constructor.
+  MovementFactor(const MovementFactor &other) = default;
+  // Assignment operator.
+  MovementFactor &operator=(const MovementFactor &other) = default;
 
   // Accessors and Mutators for all attributes.
   // The location ones are interesting because they are sourced from our
