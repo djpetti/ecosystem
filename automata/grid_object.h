@@ -52,6 +52,10 @@ class GridObject {
   // Removes the object from the grid. It is okay to call this function more
   // than once.
   bool RemoveFromGrid();
+  // Figures out who we're conflicted with.
+  // Returns: A pointer to the object we are conflicted with, or nullptr if we
+  // are not conflicted with anybody.
+  GridObject *GetConflict();
 
  protected:
   // x and y coordinates of the object's position, present and past, index of

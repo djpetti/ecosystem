@@ -104,7 +104,7 @@ bool Organism::DefaultConflictHandler() {
   }
   // Unblacklist stuff.
   printf("Unblacklisting all.\n");
-  BlacklistOccupied(baked_x, baked_y, true, to_move->get_speed());
+  BlacklistOccupied(baked_x, baked_y, false, to_move->get_speed());
 
   return true;
 }

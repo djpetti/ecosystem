@@ -42,9 +42,9 @@ void AnimalMetabolism::UpdateBasalRate() {
                                    kB3 / body_temp_);
 }
 
-void AnimalMetabolism::Consume(const Metabolism &metabolism) {
+void AnimalMetabolism::Consume(const Metabolism *metabolism) {
   // Giving it a negative loss is actually a gain.
-  UseEnergy(-metabolism.energy());
+  UseEnergy(-metabolism->energy());
 }
 
 void AnimalMetabolism::Update(int time) {

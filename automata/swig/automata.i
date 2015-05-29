@@ -8,9 +8,11 @@
 #include "../organism.h"
 #include "../metabolism/plant_metabolism.h"
 #include "../metabolism/animal_metabolism.h"
-using namespace automata;
-using namespace automata::metabolism;
+using namespace ::automata;
+using namespace ::automata::metabolism;
 %}
+
+%include metabolism.i
 
 class GridObject {
  public:
@@ -20,13 +22,15 @@ class GridObject {
   int get_index() const;
   bool SetPosition(int x, int y);
   void get_position(int *OUTPUT, int *OUTPUT) const;
+  bool RemoveFromGrid();
+  GridObject *GetConflict();
 };
 
 namespace std {
   %template(GridObjectVector) vector<GridObject *>;
 }
 
-class Organism {
+class Organism : public GridObject {
  public:
   Organism(Grid *grid, int index);
   bool Initialize(int x, int y);
@@ -45,6 +49,7 @@ class Organism {
   bool DefaultConflictHandler();
   void Die();
   bool IsAlive() const;
+  GridObject *GetConflict();
 };
 
 class Grid {
@@ -58,7 +63,7 @@ class Grid {
   void set_scale(double scale);
 };
 
-class PlantMetabolism {
+class PlantMetabolism : public Metabolism {
  public:
   PlantMetabolism(double mass, double efficiency, double area_mean,
                   double area_stddev, double cellulose, double hemicellulose,
@@ -70,7 +75,7 @@ class PlantMetabolism {
   double energy() const;
 };
 
-class AnimalMetabolism {
+class AnimalMetabolism : public Metabolism {
  public:
   AnimalMetabolism(double mass, double fat_mass, double body_temp,
                   double scale, double drag_coefficient, int iteration_time);
@@ -80,6 +85,6 @@ class AnimalMetabolism {
   double mass() const;
   double energy() const;
 
-  void Consume(const Metabolism &metabolism);
+  void Consume(Metabolism *metabolism);
   void Move(double distance);
 };

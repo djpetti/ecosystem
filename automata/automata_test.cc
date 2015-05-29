@@ -404,5 +404,30 @@ TEST_F(AutomataTest, CleanupTest) {
   delete object2;
 }
 
+// Does the grid_object GetConflict method work as expected?
+TEST_F(AutomataTest, GetConflictTest) {
+  GridObject object1(&grid_, 0);
+  GridObject object2(&grid_, 1);
+  ASSERT_TRUE(object1.Initialize(0, 0));
+  ASSERT_TRUE(object2.Initialize(1, 1));
+
+  // There should be no conflict.
+  EXPECT_EQ(nullptr, object1.GetConflict());
+  EXPECT_EQ(nullptr, object2.GetConflict());
+
+  // ...even after we update.
+  ASSERT_TRUE(grid_.Update());
+  EXPECT_EQ(nullptr, object1.GetConflict());
+  EXPECT_EQ(nullptr, object2.GetConflict());
+
+  // Make a conflict.
+  ASSERT_TRUE(object1.SetPosition(0, 0));
+  ASSERT_FALSE(object2.SetPosition(0, 0));
+
+  // Now it should register.
+  EXPECT_EQ(&object2, object1.GetConflict());
+  EXPECT_EQ(&object1, object2.GetConflict());
+}
+
 }  //  testing
 }  //  automata

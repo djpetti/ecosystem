@@ -84,7 +84,7 @@ TEST_F(AnimalMetabolismTest, PredationTest) {
   AnimalMetabolism prey(kInitialMass, kFatMass, kBodyTemp, kScale,
                         kDragCoefficient, kIterationTime);
 
-  metabolism_.Consume(prey);
+  metabolism_.Consume(&prey);
 
   // Since the prey has the exact same parameters as we do, we expect the energy
   // to double.

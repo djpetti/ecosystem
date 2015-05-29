@@ -24,3 +24,6 @@ Metabolism:
     InitialFatMass: 0.03
     # Body temperature. (K)
     BodyTemperature: 310.65
+
+Prey:
+- "Agrostis Stolonifera"

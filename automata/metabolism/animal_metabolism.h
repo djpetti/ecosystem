@@ -15,8 +15,6 @@ class AnimalMetabolism : public Metabolism {
   // scale: The scale of the animal. (m)
   // drag_coefficient: The drag coefficient of the animal in air.
   // iteration_time: Duration of each simulation cycle. (s)
-  // basal_rate: An optional metabolic rate for the organism. (W/kg) Otherwise,
-  // this rate will be calculated from Kleiber's law.
   AnimalMetabolism(double mass, double fat_mass, double body_temp, double scale,
                    double drag_coefficient, int iteration_time);
   virtual ~AnimalMetabolism() = default;
@@ -26,8 +24,8 @@ class AnimalMetabolism : public Metabolism {
 
   // Consume another organism, and calculate the nutrient gains by this
   // organism.
-  // Organism: The metabolism object associated with another organism.
-  void Consume(const Metabolism &metabolism);
+  // metabolism: The metabolism object associated with another organism.
+  void Consume(const Metabolism *metabolism);
   // Calculates energy loss due to moving.
   // distance: How far we moved. (m)
   void Move(double distance);

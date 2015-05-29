@@ -9,7 +9,7 @@ from modified_logger import Logger
 # This has to happen before anything we import tries to create a logger.
 Logger.set_path("test_log.log")
 
-from swig_modules.automata import Grid as C_Grid
+from swig_modules.automata import Grid as C_Grid, AnimalMetabolism
 import grid_object
 import library
 import organism
@@ -17,11 +17,40 @@ import update_handler
 import visualization
 
 
+""" Tests the grid_object class. """
+class TestGridObject(unittest.TestCase):
+  def setUp(self):
+    grid_object.GridObject.clear_objects()
+
+    self.__grid = C_Grid(10, 10)
+
+  """ Does the indexing system work properly? """
+  def test_indexing(self):
+    object1 = grid_object.GridObject(self.__grid, (0, 0))
+    object2 = grid_object.GridObject(self.__grid, (1, 1))
+    object3 = grid_object.GridObject(self.__grid, (2, 2))
+
+    self.assertEqual(0, object1.get_index())
+    self.assertEqual(1, object2.get_index())
+    self.assertEqual(2, object3.get_index())
+
+    self.assertEqual([object1, object2, object3],
+                     grid_object.GridObject.grid_objects)
+
+    # Delete one, and make sure the others get rolled back.
+    object2.delete()
+
+    self.assertEqual(0, object1.get_index())
+    self.assertEqual(1, object3.get_index())
+
+    self.assertEqual([object1, object3], grid_object.GridObject.grid_objects)
+
+
 """ Tests the organism class. """
 class TestOrganism(unittest.TestCase):
   def setUp(self):
-    grid = C_Grid(10, 10)
-    self.__organism = organism.Organism(grid, 0, (0, 0))
+    self.__grid = C_Grid(10, 10)
+    self.__organism = organism.Organism(self.__grid, (0, 0))
 
   """ Does loading and setting attributes work as expected? """
   def test_attributes(self):
@@ -46,6 +75,43 @@ class TestOrganism(unittest.TestCase):
     with self.assertRaises(AttributeError):
       self.__organism.Nonexistent
 
+  """ Can we handle predation correctly? """
+  def test_predation(self):
+    predator = organism.Organism(self.__grid, (1, 1))
+    self.assertTrue(self.__grid.Update())
+
+    # These attributes will cause the predator organism to prey on the other
+    # one.
+    prey_attributes = {"Taxonomy": {"Genus": "Prey", "Species": "Species"}}
+    predator_attributes = {"Prey": "Prey Species",
+        "Taxonomy": {"Genus": "Predator", "Species": "Species"}}
+    self.__organism.set_attributes(prey_attributes)
+    predator.set_attributes(predator_attributes)
+
+    # Initialize some default metabolisms for the organisms.
+    predator.metabolism = AnimalMetabolism(0.5, 0.1, 310.15, 0.5, 0.37, 1)
+    self.__organism.metabolism = AnimalMetabolism(0.5, 0.1, 310.15,
+                                                  0.5, 0.37, 1)
+    original_energy = predator.metabolism.energy()
+
+    # Move the two organisms into a position where they conflict.
+    self.__organism.set_position((0, 0))
+    with self.assertRaises(grid_object.GridObjectError):
+      predator.set_position((0, 0))
+
+    # Handle the conflict.
+    predator.handle_conflict()
+
+    # Check that the prey is dead.
+    self.assertFalse(self.__organism.is_alive())
+    # Check that the predator has all the prey's energy.
+    self.assertEqual(original_energy * 2, predator.metabolism.energy())
+
+    # The conflict should now be resolved, and we should be able to update the
+    # grid.
+    print("Updating grid.")
+    self.assertTrue(self.__grid.Update())
+
 
 """ Tests the library class. """
 class TestLibrary(unittest.TestCase):
@@ -54,6 +120,8 @@ class TestLibrary(unittest.TestCase):
                 "key6": 6}
 
   def setUp(self):
+    grid_object.GridObject.clear_objects()
+
     self.__library = library.Library("test_library")
     self.__grid = C_Grid(10, 10)
 
@@ -90,13 +158,13 @@ class TestLibrary(unittest.TestCase):
   """ Can we load an organism successfully? """
   def test_load(self):
     # These various notations should work.
-    self.__library.load_organism("test species", self.__grid, 0, (0, 0))
+    self.__library.load_organism("test species", self.__grid, (0, 0))
     organism = \
-        self.__library.load_organism("Test Species", self.__grid, 0, (0, 0))
+        self.__library.load_organism("Test Species", self.__grid, (1, 1))
 
     # Test that everything came out as we expected it to.
-    self.assertEqual(organism.get_position(), (0, 0))
-    self.assertEqual(organism.get_index(), 0)
+    self.assertEqual(organism.get_position(), (1, 1))
+    self.assertEqual(organism.get_index(), 1)
     self.assertEqual(organism.CommonName, "Test Species")
     self.assertEqual(organism.Taxonomy.Domain, "TestDomain")
 
@@ -131,7 +199,7 @@ class TestVisualizations(unittest.TestCase):
     test_attributes = {"Visualization": {"Color": "#00FF00"}}
 
     self.__grid = C_Grid(100, 100)
-    self.__grid_object = organism.Organism(self.__grid, 0, (5, 5))
+    self.__grid_object = organism.Organism(self.__grid, (5, 5))
     self.__grid_object.set_attributes(test_attributes)
 
     self.__grid_vis = visualization.GridVisualization(100, 100)
@@ -217,6 +285,10 @@ class TestUpdateHandler(unittest.TestCase):
       raise RuntimeError("Ran handler.")
 
   def setUp(self):
+    # Reset the list of saved grid objects so that we end up with the right
+    # indices.
+    grid_object.GridObject.clear_objects()
+
     test_attributes1 = {"CommonName": "Test Species",
         "Taxonomy": {"Domain": "TestDomain"}}
     test_attributes2 = copy.deepcopy(test_attributes1)
@@ -229,9 +301,9 @@ class TestUpdateHandler(unittest.TestCase):
     # Simply instantiating our handler should register it.
     self.__test_handler = TestUpdateHandler.TestingHandler()
 
-    self.__organism1 = organism.Organism(grid, 0, (0, 0))
-    self.__organism2 = organism.Organism(grid, 1, (1, 1))
-    self.__organism3 = organism.Organism(grid, 2, (2, 2))
+    self.__organism1 = organism.Organism(grid, (0, 0))
+    self.__organism2 = organism.Organism(grid, (1, 1))
+    self.__organism3 = organism.Organism(grid, (2, 2))
     self.__organism1.set_attributes(test_attributes1)
     self.__organism2.set_attributes(test_attributes2)
     self.__organism3.set_attributes(test_attributes3)

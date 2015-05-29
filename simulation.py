@@ -69,10 +69,8 @@ class Simulation:
       y_pos = organism[3]
 
       library = Library(library_name)
-      organism = library.load_organism(name, self.__grid,
-          len(self.__grid_objects), (x_pos, y_pos))
-      logger.info("Adding new grid object with index %d at (%d, %d)." %
-          (len(self.__grid_objects), x_pos, y_pos))
+      organism = library.load_organism(name, self.__grid, (x_pos, y_pos))
+      logger.info("Adding new grid object at (%d, %d)." % (x_pos, y_pos))
 
       self.__grid_objects.append(organism)
 

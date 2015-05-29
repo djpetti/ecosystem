@@ -139,10 +139,9 @@ class Library:
   """ Loads an organism from the library.
   name: The organism's scientific name.
   grid: The grid to place this organism on.
-  index: The index of the organism in the simulation grid.
   position: Where on the grid to place this organism, in the form (x, y).
   Returns: An organism object containing this organism. """
-  def load_organism(self, name, grid, index, position):
+  def load_organism(self, name, grid, position):
     logger.debug("Loading '%s' from '%s'." % (name, self.__library))
 
     name = name.lower()
@@ -161,7 +160,7 @@ class Library:
     # Incorporate the defaults into our original data.
     merged = _merge_trees(data, defaults)
 
-    organism = Organism(grid, index, position)
+    organism = Organism(grid, position)
     organism.set_attributes(merged)
 
     if grid.scale() < 0:

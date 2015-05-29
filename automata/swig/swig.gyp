@@ -30,14 +30,16 @@
               '<(DEPTH)/automata/organism.cc',
               '<(DEPTH)/automata/organism.h',
               '<(DEPTH)/automata/metabolism/plant_metabolism.cc',
-              '<(DEPTH)/automata/metabolism/plant_metabolism.h'
+              '<(DEPTH)/automata/metabolism/plant_metabolism.h',
               '<(DEPTH)/automata/metabolism/animal_metabolism.cc',
-              '<(DEPTh)/automata/metabolism/animal_metabolism.h',
+              '<(DEPTH)/automata/metabolism/animal_metabolism.h',
+              '<(DEPTH)/automata/macros.h',
             ],
           },
           'action_name': 'swig',
           'inputs': [
             'automata.i',
+            'metabolism.i',
             '<@(libautomata_files)',
           ],
           'outputs': [

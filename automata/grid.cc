@@ -126,7 +126,7 @@ bool Grid::PurgeNew(int x, int y, const GridObject *object) {
 
 GridObject *Grid::GetPending(int x, int y) {
   const Cell *cell = &grid_[x * x_size_ + y];
-  if (cell->NewObject == cell->Object) {
+  if (cell->NewObject == cell->Object && !cell->RequestStasis) {
     // Technically, there is nothing pending insertion here.
     return nullptr;
   }

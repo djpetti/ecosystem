@@ -131,7 +131,7 @@ class AnimalHandler(UpdateHandler):
       organism.update_position()
     except OrganismError:
       # Check to see if we have a conflict we can resolve.
-      organism.default_conflict_handler()
+      organism.handle_conflict()
 
     logger.debug("New position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
