@@ -34,8 +34,7 @@ class AttributeHelper:
 
       # We're at the bottom.
       return attribute
-    logger.log_and_raise(AttributeError,
-        "Organism has no attribute '%s'." % (name))
+    raise AttributeError("Organism has no attribute '%s'." % (name))
 
   """ Returns: A dictionary containing all the attributes. """
   def get_all_attributes(self):
@@ -89,7 +88,8 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     return True
 
-  """ Sets the organism's attributes.
+  """ Sets the organism's attributes. Also does some initialization that can
+  only be done after the attributes are set.
   attributes: The attribute data to set. """
   def set_attributes(self, attributes):
     logger.debug("Setting attributes of organism %d to %s." % \
@@ -99,6 +99,24 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Figure out which handlers apply to us.
     UpdateHandler.set_handlers_static_filtering(self)
+
+    # As soon as an organism comes online, we need to create movement factors
+    # representing it and add them for every organism that will be affected by
+    # this one. It doesn't matter if we add movement factors to plants, because
+    # their positions never get updated anyway.
+    for organism in self.grid_objects:
+      if isinstance(organism, Organism):
+        if (hasattr(self, "Prey") and organism.scientific_name() in self.Prey):
+          # Add a movement factor that causes them to flee us.
+          organism.add_factor_from_organism(self, True)
+          # Add a movement factor that causes us to be attracted to them.
+          self.add_factor_from_organism(organism, False)
+        elif (hasattr(organism, "Prey") and \
+              self.scientific_name() in organism.Prey):
+          # Add a movement factor that causes them to be attracted to us.
+          organism.add_factor_from_organism(self, False)
+          # Add a movement factor that causes us to flee them.
+          self.add_factor_from_organism(organism, True)
 
   """ Returns whether or not the organism is alive. """
   def is_alive(self):
@@ -197,3 +215,38 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Delete ourselves from the grid_objects array and from the grid.
     self.delete()
+
+    # Remove any lingering references to ourselves hanging around in the C++
+    # code.
+    for organism in grid_object.GridObject.grid_objects:
+      if not isinstance(organism, Organism):
+        continue
+      organism.cleanup_organism(self)
+
+  """ Adds a movement factor from a specific organism.
+  organism: The organism to use for the factor.
+  prey: True if we are the prey of that organism. Otherwise, we are the
+  predator. """
+  def add_factor_from_organism(self, organism, prey):
+    logger.debug("%d: Adding factor for %d. Prey: %s" % (self.get_index(),
+                                                         organism.get_index(),
+                                                         prey))
+
+    if prey:
+      strength = self.Metabolism.Animal.PredatorFactorStrength
+      visibility = self.Metabolism.Animal.PredatorFactorVisibility
+    else:
+      strength = self.Metabolism.Animal.PreyFactorStrength
+      visibility = self.Metabolism.Animal.PreyFactorVisibility
+
+    # Actually add the factor.
+    self._object.AddFactorFromOrganism(organism._object, strength,
+                                         visibility)
+
+  """ Removes all references to another organism from this organism.
+  organism: The organism to remove references to. """
+  def cleanup_organism(self, organism):
+    logger.debug("%d: Cleaning up %d." % (self.get_index(),
+                                          organism.get_index()))
+
+    self._object.CleanupOrganism(organism._object)

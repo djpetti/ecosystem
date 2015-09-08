@@ -429,5 +429,27 @@ TEST_F(AutomataTest, GetConflictTest) {
   EXPECT_EQ(&object1, object2.GetConflict());
 }
 
+// Does CleanupOrganism work properly?
+TEST_F(AutomataTest, CleaunupOrganismTest) {
+  Organism organism1(&grid_, 0);
+  Organism organism2(&grid_, 1);
+  ASSERT_TRUE(organism1.Initialize(0, 0));
+  ASSERT_TRUE(organism2.Initialize(1, 1));
+
+  organism1.AddFactorFromOrganism(&organism2, 1);
+
+  // We should now have a movement factor referencing organism2.
+  const ::std::vector<MovementFactor> &factors = organism1.factors();
+  ASSERT_EQ(1u, factors.size());
+  ASSERT_EQ(&organism2, factors[0].GetOrganism());
+
+  // Try cleaning up after organism2.
+  organism1.CleanupOrganism(organism2);
+
+  // We should now have no movement factors at all.
+  const ::std::vector<MovementFactor> &new_factors = organism1.factors();
+  EXPECT_TRUE(new_factors.empty());
+}
+
 }  //  testing
 }  //  automata

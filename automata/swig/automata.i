@@ -50,6 +50,7 @@ class Organism : public GridObject {
   void Die();
   bool IsAlive() const;
   GridObject *GetConflict();
+  void CleanupOrganism(const Organism &organism);
 };
 
 class Grid {

@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>  // TEMP
 #include <stdlib.h>
 #include <time.h>
 
@@ -267,6 +268,7 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
     for (uint32_t i = 0; i < xs.size(); ++i) {
       probabilities[i] = 1.0 / xs.size();
     }
+    printf("Using equal probabilities.\n");
     return;
   }
 
@@ -281,7 +283,7 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
       const double radius = factor.GetDistance(xs[i], ys[i]);
 
       if (radius != 0) {
-        probabilities[i] += (1.0 / radius) * factor.GetStrength();
+        probabilities[i] += (1.0 / pow(radius, 5)) * factor.GetStrength();
       } else {
         // If our factor is in the same location that we are.
         probabilities[i] += 10 * factor.GetStrength();
@@ -306,6 +308,7 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
   for (uint32_t i = 0; i < xs.size(); ++i) {
     // Do the scaling.
     probabilities[i] /= total;
+    printf("Probabilities: %f\n", probabilities[i]);
   }
 }
 
@@ -336,6 +339,7 @@ void Grid::RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
   for (uint32_t i = 0; i < factors->size(); ++i) {
     const double radius = (*factors)[i].GetDistance(x, y);
 
+    printf("Radius: %f\n", radius);
     if (((*factors)[i].GetVisibility() > 0 &&
          radius > (*factors)[i].GetVisibility()) ||
         (vision > 0 && radius > vision)) {

@@ -49,6 +49,8 @@ class TestGridObject(unittest.TestCase):
 """ Tests the organism class. """
 class TestOrganism(unittest.TestCase):
   def setUp(self):
+    grid_object.GridObject.clear_objects()
+
     self.__grid = C_Grid(10, 10)
     self.__organism = organism.Organism(self.__grid, (0, 0))
 
@@ -82,9 +84,13 @@ class TestOrganism(unittest.TestCase):
 
     # These attributes will cause the predator organism to prey on the other
     # one.
-    prey_attributes = {"Taxonomy": {"Genus": "Prey", "Species": "Species"}}
+    prey_attributes = {"Taxonomy": {"Genus": "Prey", "Species": "Species"},
+        "Metabolism": {"Animal": {"PredatorFactorStrength": -1,
+        "PredatorFactorVisibility": -1}}}
     predator_attributes = {"Prey": "Prey Species",
-        "Taxonomy": {"Genus": "Predator", "Species": "Species"}}
+        "Taxonomy": {"Genus": "Predator", "Species": "Species"}, "Metabolism":
+        {"Animal": {"PreyFactorStrength": 1,
+        "PreyFactorVisibility": -1}}}
     self.__organism.set_attributes(prey_attributes)
     predator.set_attributes(predator_attributes)
 
@@ -109,7 +115,6 @@ class TestOrganism(unittest.TestCase):
 
     # The conflict should now be resolved, and we should be able to update the
     # grid.
-    print("Updating grid.")
     self.assertTrue(self.__grid.Update())
 
 

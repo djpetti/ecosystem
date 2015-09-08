@@ -2,6 +2,7 @@
 #define ECOSYSTEM_AUTOMATA_ORGANISM_H_
 
 #include <stdint.h>
+#include <stdio.h>  // TEMP
 
 #include <vector>
 
@@ -54,7 +55,15 @@ class Organism : public GridObject {
                                     int visibility = -1) {
     MovementFactor factor(organism, strength, visibility);
     factors_.push_back(factor);
+    printf("%d: We now have %zu factors.\n", index_, factors_.size());
   }
+  const ::std::vector<MovementFactor> &factors() const { return factors_; }
+  // Cleans up any references this organism contains to a specified other
+  // organism. For now, it only removes movement factors. This is generally
+  // called because that organism is being destructed, and all those references
+  // are about to become dead pointers.
+  // organism: The organism we want to remove references to.
+  void CleanupOrganism(const Organism &organism);
   // A default handler for conflicts on the grid between this organism and
   // another. It resolves the conflict by forcing a random one of them to
   // move again. This method can be called on either organism involved in a
@@ -63,9 +72,7 @@ class Organism : public GridObject {
   // moving, or if it finds that this organism is not conflicted.
   bool DefaultConflictHandler();
   // Specifies that this particular organism has died and is now defunct.
-  inline void Die() {
-    alive_ = false;
-  }
+  void Die();
   // Returns: Whether or not the organism is alive.
   inline bool IsAlive() const {
     return alive_;

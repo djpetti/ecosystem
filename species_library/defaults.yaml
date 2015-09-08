@@ -25,3 +25,14 @@ Metabolism:
   Animal:
     # Approximate drag coefficient of the animal.
     DragCoefficient: 0.5
+
+    # The default strength to use for movement factors that attract the animal
+    # to prey.
+    PreyFactorStrength: 100
+    # The default visibility to use for the above movement factors.
+    PreyFactorVisibility: -1
+    # The default strength to use for movement factors that repel the animal
+    # from predators.
+    PredatorFactorStrength: -1
+    # The default visibility to use for the above movement factors.
+    PredatorFactorVisibility: -1

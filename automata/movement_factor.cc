@@ -46,7 +46,7 @@ int MovementFactor::GetY() {
 }
 
 double MovementFactor::GetDistance(int x, int y) {
-  return pow(pow(x_ - x, 2) + pow(y_ - y, 2), 0.5);
+  return pow(pow(GetX() - x, 2) + pow(GetY() - y, 2), 0.5);
 }
 
 }  //  automata

@@ -33,11 +33,11 @@ class MovementFactor {
   bool SetY(int y);
   int GetY();
   void SetStrength(int strength) { strength_ = strength; }
-  int GetStrength() { return strength_; }
+  int GetStrength() const { return strength_; }
   void SetVisibility(int visibility) { visibility_ = visibility; }
-  int GetVisibility() { return visibility_; }
+  int GetVisibility() const { return visibility_; }
   void SetOrganism(Organism *organism) { organism_ = organism; }
-  Organism *GetOrgansim() { return organism_; }
+  Organism *GetOrganism() const { return organism_; }
 
   // Returns the distance between this factor and a location. Basically does the
   // distance formula.

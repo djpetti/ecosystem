@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h> // TEMP
 #include <stdlib.h>
 #include <time.h>
@@ -22,6 +23,7 @@ bool Organism::UpdatePosition(int use_x /*= -1*/, int use_y /*= -1*/) {
   }
   // This only returns false if x and y are out of range, so if it is, we have a
   // pretty serious problem.
+  printf("%d: Have %zu factors.\n", index_, factors_.size());
   assert(grid_->MoveObject(use_x, use_y, factors_, &x, &y, speed_, vision_) &&
          "MoveObject() failed unexpectedly.");
 
@@ -107,6 +109,23 @@ bool Organism::DefaultConflictHandler() {
   BlacklistOccupied(baked_x, baked_y, false, to_move->get_speed());
 
   return true;
+}
+
+void Organism::Die() {
+  alive_ = false;
+}
+
+void Organism::CleanupOrganism(const Organism &organism) {
+  // Check to see if we have any movement factors related to this organism.
+  for (uint32_t i = 0; i < factors_.size(); ++i) {
+    MovementFactor &factor = factors_[i];
+    if (&organism == factor.GetOrganism()) {
+      // This one has to go.
+      factors_.erase(factors_.begin() + i);
+      // Since we lost one, we have to stay on the same index.
+      --i;
+    }
+  }
 }
 
 }  //  automata
