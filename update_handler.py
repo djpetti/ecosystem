@@ -146,23 +146,30 @@ class AnimalHandler(UpdateHandler):
     organism.metabolism = AnimalMetabolism(*args)
 
   def run(self, organism, iteration_time):
-    # Update animal position.
+    old_position = organism.get_position()
     logger.debug("Old position of %d: %s" % \
-        (organism.get_index(), organism.get_position()))
+        (organism.get_index(), old_position))
 
+    # Update animal position.
     try:
       organism.update_position()
     except OrganismError:
       # Check to see if we have a conflict we can resolve.
       organism.handle_conflict()
 
+    new_position = organism.get_position()
     logger.debug("New position of %d: %s" % \
-        (organism.get_index(), organism.get_position()))
+        (organism.get_index(), new_position))
 
     # Update the metabolism simulator for this time step.
     organism.metabolism.Update(iteration_time)
     logger.debug("Animal mass: %f, Animal energy: %f" % \
                 (organism.metabolism.mass(), organism.metabolism.energy()))
+
+    # Figure out energy specifically expended for movement.
+    move_distance = ((new_position[0] - old_position[0]) ** 2 + \
+                     (new_position[1] - old_position[1]) ** 2) ** (0.5)
+    organism.metabolism.Move(move_distance, iteration_time)
 
     # Organism should die if it runs out of energy.
     if organism.metabolism.energy() <= 0:
