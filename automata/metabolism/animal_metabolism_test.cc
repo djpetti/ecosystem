@@ -9,8 +9,8 @@ class AnimalMetabolismTest : public ::testing::Test {
  public:
   // Set some reasonable values for the constants.
   AnimalMetabolismTest()
-      : metabolism_(kInitialMass, kFatMass, kBodyTemp, kScale, kDragCoefficient,
-                    kIterationTime) {}
+      : metabolism_(kInitialMass, kFatMass, kBodyTemp, kScale,
+                    kDragCoefficient) {}
 
  protected:
   static constexpr double kInitialMass = 0.5;
@@ -18,7 +18,6 @@ class AnimalMetabolismTest : public ::testing::Test {
   static constexpr double kBodyTemp = 310.15;
   static constexpr double kScale = 0.5;
   static constexpr double kDragCoefficient = 0.37;
-  static constexpr int kIterationTime = 1;
 
   AnimalMetabolism metabolism_;
 };
@@ -70,7 +69,7 @@ TEST_F(AnimalMetabolismTest, MoveTest) {
   const double start_mass = metabolism_.mass();
 
   // Tell it to move a certain distance.
-  metabolism_.Move(1);
+  metabolism_.Move(1, 1);
 
   EXPECT_LT(metabolism_.energy(), start_energy);
   EXPECT_LT(metabolism_.mass(), start_mass);
@@ -82,7 +81,7 @@ TEST_F(AnimalMetabolismTest, PredationTest) {
 
   // This is what we're going to eat.
   AnimalMetabolism prey(kInitialMass, kFatMass, kBodyTemp, kScale,
-                        kDragCoefficient, kIterationTime);
+                        kDragCoefficient);
 
   metabolism_.Consume(&prey);
 

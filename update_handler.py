@@ -36,9 +36,12 @@ class UpdateHandler:
         # It meets the criteria.
         organism.add_handler(handler)
 
+        # Run the handler setup function on the organism.
+        handler.setup(organism)
+
   """ All subclasses should call this constructor. """
   def __init__(self):
-    # A dictionary story what attribute values we are filtering for.
+    # A dictionary storing what attribute values we are filtering for.
     self.__static_filters = {}
 
     # Register handler.
@@ -76,6 +79,11 @@ class UpdateHandler:
   def dynamic_filter(self, organism):
     # By default, do nothing.
     return True
+
+  """ A particular set of actions that must be taken when this handler is first
+  added to an organism. """
+  def setup(self, organism):
+    pass
 
   """ Runs the actual body of the handler. This is designed to be implemented by
   the user in superclasses.
@@ -122,6 +130,21 @@ class AnimalHandler(UpdateHandler):
 
     self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
 
+  def setup(self, organism):
+    # Setup the metabolism simulator.
+    logger.debug("Initializing metabolism simulation for organism %d." % \
+                  (organism.get_index()))
+
+    mass = organism.Metabolism.Animal.InitialMass
+    fat_mass = organism.Metabolism.Animal.InitialFatMass
+    body_temp = organism.Metabolism.Animal.BodyTemperature
+    scale = organism.Scale
+    drag_coefficient = organism.Metabolism.Animal.DragCoefficient
+
+    args = [mass, fat_mass, body_temp, scale, drag_coefficient]
+    logger.debug("Constructing AnimalMetabolism with args: %s" % (args))
+    organism.metabolism = AnimalMetabolism(*args)
+
   def run(self, organism, iteration_time):
     # Update animal position.
     logger.debug("Old position of %d: %s" % \
@@ -135,22 +158,6 @@ class AnimalHandler(UpdateHandler):
 
     logger.debug("New position of %d: %s" % \
         (organism.get_index(), organism.get_position()))
-
-    # Add metabolism object if we don't have it.
-    if not organism.metabolism:
-      logger.debug("Initializing metabolism simulation for organism %d." % \
-                   (organism.get_index()))
-
-      mass = organism.Metabolism.Animal.InitialMass
-      fat_mass = organism.Metabolism.Animal.InitialFatMass
-      body_temp = organism.Metabolism.Animal.BodyTemperature
-      scale = organism.Scale
-      drag_coefficient = organism.Metabolism.Animal.DragCoefficient
-
-      args = [mass, fat_mass, body_temp, scale, drag_coefficient,
-              iteration_time]
-      logger.debug("Constructing AnimalMetabolism with args: %s" % (args))
-      organism.metabolism = AnimalMetabolism(*args)
 
     # Update the metabolism simulator for this time step.
     organism.metabolism.Update(iteration_time)
@@ -170,48 +177,48 @@ class PlantHandler(UpdateHandler):
 
     self.filter_attribute("Taxonomy.Kingdom", "Plantae")
 
+  def setup(self, organism):
+    # Setup the metabolism simulation.
+    logger.debug("Initializing metabolism simulation for organism %d." %
+                  (organism.get_index()))
+
+    # Figure out efficiency.
+    if organism.Metabolism.Photosynthesis.Pathway == "C3":
+      efficiency = organism.Metabolism.Photosynthesis.C3Efficiency
+    elif organism.Metabolism.Photosynthesis.Pathway == "C4":
+      efficiency = organism.Metabolism.Photosynthesis.C4Efficiency
+    else:
+      raise ValueError("Invalid photosynthesis pathway: '%s'" % \
+                        (organism.Metabolism.Photosynthesis.Pathway))
+
+    mass = organism.Metabolism.Plant.SeedlingMass
+
+    # Figure out the amount of leaf area.
+    try:
+      area_mean = organism.Metabolism.Plant.MeanLeafArea
+    except AttributeError:
+      logger.warning("Using default leaf area mean for plant '%d'." % \
+                      (organism.get_index()))
+      # Calculate a plausible leaf area based on the scale.
+      area_mean = 0.5 * (organism.Scale ** 2)
+    try:
+      area_stddev = organism.Metabolism.Plant.LeafAreaStddev
+    except AttributeError:
+      logger.warning("Using default leaf area stddev for plant '%d'." % \
+                      (organism.get_index()))
+      # Calculate a plausible leaf standard deviation based on the area.
+      area_stddev = area_mean * 0.3
+
+    cellulose = organism.Metabolism.Plant.Cellulose
+    hemicellulose = organism.Metabolism.Plant.Hemicellulose
+    lignin = organism.Metabolism.Plant.Lignin
+
+    args = [mass, efficiency, area_mean, area_stddev, cellulose,
+            hemicellulose, lignin]
+    logger.debug("Constructing PlantMetabolism with args: %s" % (args))
+    organism.metabolism = PlantMetabolism(*args)
+
   def run(self, organism, iteration_time):
-    # Initialize the metabolism simulator if we haven't already.
-    if not organism.metabolism:
-      logger.debug("Initializing metabolism simulation for organism %d." %
-                   (organism.get_index()))
-
-      # Figure out efficiency.
-      if organism.Metabolism.Photosynthesis.Pathway == "C3":
-        efficiency = organism.Metabolism.Photosynthesis.C3Efficiency
-      elif organism.Metabolism.Photosynthesis.Pathway == "C4":
-        efficiency = organism.Metabolism.Photosynthesis.C4Efficiency
-      else:
-        raise ValueError("Invalid photosynthesis pathway: '%s'" % \
-                         (organism.Metabolism.Photosynthesis.Pathway))
-
-      mass = organism.Metabolism.Plant.SeedlingMass
-
-      # Figure out the amount of leaf area.
-      try:
-        area_mean = organism.Metabolism.Plant.MeanLeafArea
-      except AttributeError:
-        logger.warning("Using default leaf area mean for plant '%d'." % \
-                       (organism.get_index()))
-        # Calculate a plausible leaf area based on the scale.
-        area_mean = 0.5 * (organism.Scale ** 2)
-      try:
-        area_stddev = organism.Metabolism.Plant.LeafAreaStddev
-      except AttributeError:
-        logger.warning("Using default leaf area stddev for plant '%d'." % \
-                       (organism.get_index()))
-        # Calculate a plausible leaf standard deviation based on the area.
-        area_stddev = area_mean * 0.3
-
-      cellulose = organism.Metabolism.Plant.Cellulose
-      hemicellulose = organism.Metabolism.Plant.Hemicellulose
-      lignin = organism.Metabolism.Plant.Lignin
-
-      args = [mass, efficiency, area_mean, area_stddev, cellulose,
-              hemicellulose, lignin]
-      logger.debug("Constructing PlantMetabolism with args: %s" % (args))
-      organism.metabolism = PlantMetabolism(*args)
-
     # Request that the plant stays in the same place. (If we don't do this, it
     # won't generate a conflict if something else tries to move here.)
     logger.debug("Plant position: %s" % (str(organism.get_position())))

@@ -22,12 +22,11 @@ constexpr double kAirDensity = 1.225;
 
 AnimalMetabolism::AnimalMetabolism(double mass, double fat_mass,
                                    double body_temp, double scale,
-                                   double drag_coefficient, int iteration_time)
+                                   double drag_coefficient)
     : Metabolism(mass),
       body_temp_(body_temp),
       scale_(scale),
-      drag_coefficient_(drag_coefficient),
-      iteration_time_(iteration_time) {
+      drag_coefficient_(drag_coefficient) {
   // Figure out the initial energy from fat reserves.
   energy_ = fat_mass * 1000 * kFatEnergy * 1000;
 
@@ -59,14 +58,14 @@ void AnimalMetabolism::UseEnergy(double amount) {
   energy_ -= amount;
 }
 
-void AnimalMetabolism::Move(double distance) {
+void AnimalMetabolism::Move(double distance, int time) {
   // We're going to assume that acceleration and decceleration are negligible,
   // and that most of our energy expendetures are from overcoming friction.
   // Calculate an approximate cross-sectional area based on scale.
   const double area = ::std::pow(scale_, 2);
   // Velocity can be calculated from distance, since we know we are moving it in
   // one iteration.
-  const double velocity = distance / iteration_time_;
+  const double velocity = distance / time;
   const double drag =
       0.5 * drag_coefficient_ * kAirDensity * area * ::std::pow(velocity, 2);
   // Figure out the work done by drag, which should be equal to the work done by

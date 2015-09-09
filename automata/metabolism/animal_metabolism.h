@@ -14,9 +14,8 @@ class AnimalMetabolism : public Metabolism {
   // body_temp: The body temperature of the animal. (K)
   // scale: The scale of the animal. (m)
   // drag_coefficient: The drag coefficient of the animal in air.
-  // iteration_time: Duration of each simulation cycle. (s)
   AnimalMetabolism(double mass, double fat_mass, double body_temp, double scale,
-                   double drag_coefficient, int iteration_time);
+                   double drag_coefficient);
   virtual ~AnimalMetabolism() = default;
 
   virtual void Update(int time);
@@ -28,7 +27,8 @@ class AnimalMetabolism : public Metabolism {
   void Consume(const Metabolism *metabolism);
   // Calculates energy loss due to moving.
   // distance: How far we moved. (m)
-  void Move(double distance);
+  // time: Time it took us to move that distance. (s)
+  void Move(double distance, int time);
 
  private:
   // Updates the basal metabolic rate based on the current mass.
@@ -42,8 +42,6 @@ class AnimalMetabolism : public Metabolism {
   double scale_;
   // Air drag coefficient of the organism.
   double drag_coefficient_;
-  // Duration of each simulation cycle. (s)
-  int iteration_time_;
 };
 
 }  // namespace metabolism
