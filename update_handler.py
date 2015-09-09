@@ -145,6 +145,11 @@ class AnimalHandler(UpdateHandler):
     logger.debug("Constructing AnimalMetabolism with args: %s" % (args))
     organism.metabolism = AnimalMetabolism(*args)
 
+    # Set up the organism's vision.
+    logger.debug("Initializing organism vision as %d." % \
+                 (organism.Vision))
+    organism.set_vision(organism.Vision)
+
   def run(self, organism, iteration_time):
     old_position = organism.get_position()
     logger.debug("Old position of %d: %s" % \

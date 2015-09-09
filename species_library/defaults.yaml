@@ -36,3 +36,6 @@ Metabolism:
     PredatorFactorStrength: -1
     # The default visibility to use for the above movement factors.
     PredatorFactorVisibility: -1
+
+# The maximum distance that the organism can perceive things at.
+Vision: 100

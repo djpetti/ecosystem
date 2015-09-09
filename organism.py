@@ -250,3 +250,13 @@ class Organism(grid_object.GridObject, AttributeHelper):
                                           organism.get_index()))
 
     self._object.CleanupOrganism(organism._object)
+
+  """ Sets how far away the organism can percieve movement factors.
+  vision: The new value for the organism's vision. """
+  def set_vision(self, vision):
+    self._object.set_vision(vision)
+
+  """ Returns: The organism's vision, which is how far away it can perceive
+  movement factors. """
+  def get_vision(self):
+    return self._object.get_vision()
