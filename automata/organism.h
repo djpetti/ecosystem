@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>  // TEMP
 
-#include <vector>
+#include <list>
 
 #include "automata/grid.h"
 #include "automata/grid_object.h"
@@ -57,7 +57,7 @@ class Organism : public GridObject {
     factors_.push_back(factor);
     printf("%d: We now have %zu factors.\n", index_, factors_.size());
   }
-  const ::std::vector<MovementFactor> &factors() const { return factors_; }
+  const ::std::list<MovementFactor> &factors() const { return factors_; }
   // Cleans up any references this organism contains to a specified other
   // organism. For now, it only removes movement factors. This is generally
   // called because that organism is being destructed, and all those references
@@ -93,7 +93,7 @@ class Organism : public GridObject {
 
   // The set of movement factors on this grid that could possibly affect this
   // organism.
-  ::std::vector<MovementFactor> factors_;
+  ::std::list<MovementFactor> factors_;
   // Maximum distance in cells that the organism can perceive things. Negative
   // means that there is no limit.
   int vision_ = -1;

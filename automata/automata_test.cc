@@ -1,4 +1,4 @@
-#include <vector>
+#include <list>
 
 #include "automata/grid.h"
 #include "automata/grid_object.h"
@@ -72,7 +72,7 @@ TEST_F(AutomataTest, NeighborhoodTest) {
 
 TEST_F(AutomataTest, OutOfBoundsTest) {
   // Does GetNeighborhoodLocations deal properly with out-of-bounds input?
-  ::std::vector<int> xs, ys;
+  ::std::list<int> xs, ys;
   // Giving it a starting point outside the boundaries of the grid should make
   // it fail.
   EXPECT_FALSE(grid_.GetNeighborhoodLocations(-1, -1, &xs, &ys));
@@ -92,20 +92,20 @@ TEST_F(AutomataTest, MotionTest) {
   }
 
   // Use GetNeighborhoodLocations to generate xs and ys vectors.
-  ::std::vector<int> xs, ys;
+  ::std::list<int> xs, ys;
   grid_.GetNeighborhoodLocations(1, 1, &xs, &ys);
 
   int new_x, new_y;
   grid_.DoMovement(probabilities, xs, ys, &new_x, &new_y);
-  EXPECT_EQ(xs[0], new_x);
-  EXPECT_EQ(ys[0], new_y);
+  EXPECT_EQ(*(xs.begin()), new_x);
+  EXPECT_EQ(*(ys.begin()), new_y);
 }
 
 TEST_F(AutomataTest, MotionFactorsTest) {
   // Do movement factors influence probabilities the way we would expect?
-  ::std::vector<MovementFactor> factors;
+  ::std::list<MovementFactor> factors;
   double probabilities[8];
-  ::std::vector<int> xs, ys;
+  ::std::list<int> xs, ys;
   grid_.GetNeighborhoodLocations(1, 1, &xs, &ys);
 
   // No factors should lead to equal probability for every location.
@@ -124,7 +124,7 @@ TEST_F(AutomataTest, MotionFactorsTest) {
 
   // An attractive factor in the neighborhood should lead to a high probability
   // for its location.
-  factors[0].SetStrength(100);
+  factors.begin()->SetStrength(100);
   grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_GT(probabilities[0], probabilities[i]);
@@ -147,7 +147,7 @@ TEST_F(AutomataTest, MotionFactorsTest) {
 
   // A repulsive factor in the neighborhood should do the opposite.
   factors.pop_back();
-  factors[0].SetStrength(-100);
+  factors.begin()->SetStrength(-100);
   grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 8; ++i) {
     EXPECT_LT(probabilities[0], probabilities[i]);
@@ -155,9 +155,9 @@ TEST_F(AutomataTest, MotionFactorsTest) {
 
   // An attractive factor just outside the neighborhood should work similarly to
   // one inside the neighborhood.
-  factors[0].SetX(3);
-  factors[0].SetY(1);
-  factors[0].SetStrength(100);
+  factors.begin()->SetX(3);
+  factors.begin()->SetY(1);
+  factors.begin()->SetStrength(100);
   grid_.CalculateProbabilities(factors, xs, ys, probabilities);
   for (int i = 1; i < 7; ++i) {
     EXPECT_GT(probabilities[7], probabilities[i]);
@@ -174,7 +174,7 @@ TEST_F(AutomataTest, MotionFactorsTest) {
   // This same attractive factor should stop working if we set its visibility
   // low enough.
   auto invisible_factors = factors;
-  invisible_factors[0].SetVisibility(1);
+  invisible_factors.begin()->SetVisibility(1);
   grid_.RemoveInvisible(1, 1, &invisible_factors, -1);
   EXPECT_TRUE(invisible_factors.empty());
 
@@ -439,15 +439,15 @@ TEST_F(AutomataTest, CleaunupOrganismTest) {
   organism1.AddFactorFromOrganism(&organism2, 1);
 
   // We should now have a movement factor referencing organism2.
-  const ::std::vector<MovementFactor> &factors = organism1.factors();
+  const ::std::list<MovementFactor> &factors = organism1.factors();
   ASSERT_EQ(1u, factors.size());
-  ASSERT_EQ(&organism2, factors[0].GetOrganism());
+  ASSERT_EQ(&organism2, factors.begin()->GetOrganism());
 
   // Try cleaning up after organism2.
   organism1.CleanupOrganism(organism2);
 
   // We should now have no movement factors at all.
-  const ::std::vector<MovementFactor> &new_factors = organism1.factors();
+  const ::std::list<MovementFactor> &new_factors = organism1.factors();
   EXPECT_TRUE(new_factors.empty());
 }
 

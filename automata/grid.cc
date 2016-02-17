@@ -135,8 +135,8 @@ GridObject *Grid::GetPending(int x, int y) {
   return cell->NewObject;
 }
 
-bool Grid::GetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
-                                    ::std::vector<int> *ys,
+bool Grid::GetNeighborhoodLocations(int x, int y, ::std::list<int> *xs,
+                                    ::std::list<int> *ys,
                                     int levels /* = 1*/) {
   if (x < 0 || y < 0 || x >= x_size_ || y >= y_size_) {
     // The starting point isn't within the bounds of the grid.
@@ -195,7 +195,7 @@ bool Grid::GetNeighborhood(
     int levels /*= 1*/, bool get_new /*= false*/) {
   objects->clear();
 
-  ::std::vector<int> xs, ys;
+  ::std::list<int> xs, ys;
   if (!GetNeighborhoodLocations(x, y, &xs, &ys, levels)) {
     return false;
   }
@@ -204,14 +204,17 @@ bool Grid::GetNeighborhood(
   // by level.
   uint32_t in_level = 8;
   uint32_t current_i = 0;
-  while (current_i < xs.size()) {
+  auto x_itr = xs.begin();
+  auto y_itr = ys.begin();
+  while (x_itr != xs.end()) {
     ::std::vector<GridObject *> level_objects;
-    for (; current_i < in_level && current_i < xs.size(); ++current_i) {
+    for (; current_i < in_level && x_itr != xs.end();
+         ++x_itr, ++y_itr, ++current_i) {
       GridObject *occupant;
       if (get_new) {
-        occupant = GetPending(xs[current_i], ys[current_i]);
+        occupant = GetPending(*x_itr, *y_itr);
       } else {
-        occupant = GetOccupant(xs[current_i], ys[current_i]);
+        occupant = GetOccupant(*x_itr, *y_itr);
       }
       if (occupant) {
         level_objects.push_back(occupant);
@@ -228,12 +231,12 @@ bool Grid::GetNeighborhood(
 }
 
 bool Grid::MoveObject(int x, int y,
-                      const ::std::vector<MovementFactor> &factors, int *new_x,
+                      const ::std::list<MovementFactor> &factors, int *new_x,
                       int *new_y, int levels /* = 1*/, int vision /* = -1*/) {
-  ::std::vector<MovementFactor> visible_factors = factors;
+  ::std::list<MovementFactor> visible_factors = factors;
   RemoveInvisible(x, y, &visible_factors, vision);
 
-  ::std::vector<int> xs, ys;
+  ::std::list<int> xs, ys;
   if (!GetNeighborhoodLocations(x, y, &xs, &ys, levels)) {
     return false;
   }
@@ -248,12 +251,16 @@ bool Grid::MoveObject(int x, int y,
 
   DoMovement(probabilities, xs, ys, new_x, new_y);
 
+  if (x == *new_x && y == *new_y) {
+    printf("Staying in the same place.\n");
+  }
+
   return true;
 }
 
-void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
-                                  const ::std::vector<int> &xs,
-                                  const ::std::vector<int> &ys,
+void Grid::CalculateProbabilities(::std::list<MovementFactor> &factors,
+                                  const ::std::list<int> &xs,
+                                  const ::std::list<int> &ys,
                                   double *probabilities) {
   int total_strength = 0;
   for (auto &factor : factors) {
@@ -261,7 +268,7 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
     // zero.
     total_strength += factor.GetStrength();
   }
-  // Having the factor vector empty is valid. It means that there are no
+  // Having the factor list empty is valid. It means that there are no
   // factors, and that therefore, there should be an equal probability for every
   // neighborhood location.
   if (factors.empty() || !total_strength) {
@@ -279,8 +286,10 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
   // Calculate how far each factor is from each location and use it to change
   // the probabilities.
   for (auto &factor : factors) {
-    for (uint32_t i = 0; i < xs.size(); ++i) {
-      const double radius = factor.GetDistance(xs[i], ys[i]);
+  	auto x_itr = xs.begin();
+  	auto y_itr = ys.begin();
+    for (uint32_t i = 0; i < xs.size(); ++i, ++x_itr, ++y_itr) {
+      const double radius = factor.GetDistance(*x_itr, *y_itr);
 
       if (radius != 0) {
         probabilities[i] += (1.0 / pow(radius, 5)) * factor.GetStrength();
@@ -312,56 +321,61 @@ void Grid::CalculateProbabilities(::std::vector<MovementFactor> &factors,
   }
 }
 
-void Grid::DoMovement(const double *probabilities, const ::std::vector<int> &xs,
-                      const ::std::vector<int> &ys, int *new_x, int *new_y) {
+void Grid::DoMovement(const double *probabilities, const ::std::list<int> &xs,
+                      const ::std::list<int> &ys, int *new_x, int *new_y) {
   // Get a random float that's somewhere between 0 and 1.
   const double random =
       static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
 
   // Count up until we're above it.
   double running_total = 0;
-  for (int i = 0; i < 8; ++i) {
+  auto x_itr = xs.begin();
+  auto y_itr = ys.begin();
+  for (uint32_t i = 0; i < xs.size(); ++i, ++x_itr, ++y_itr) {
     running_total += probabilities[i];
     if (running_total >= random) {
-      *new_x = xs[i];
-      *new_y = ys[i];
+      *new_x = *x_itr;
+      *new_y = *y_itr;
       return;
     }
   }
   // Floating point weirdness could get us here...
-  *new_x = xs[7];
-  *new_y = ys[7];
+  *new_x = *(--x_itr);
+  *new_y = *(--y_itr);
 }
 
-void Grid::RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
+void Grid::RemoveInvisible(int x, int y, ::std::list<MovementFactor> *factors,
                            int vision) {
-  ::std::vector<uint32_t> to_delete;
-  for (uint32_t i = 0; i < factors->size(); ++i) {
-    const double radius = (*factors)[i].GetDistance(x, y);
+  auto itr = factors->begin();
+  for (; itr != factors->end(); ++itr) {
+    const double radius = itr->GetDistance(x, y);
 
     printf("Radius: %f\n", radius);
-    if (((*factors)[i].GetVisibility() > 0 &&
-         radius > (*factors)[i].GetVisibility()) ||
+    if (((*itr).GetVisibility() > 0 &&
+         radius > (*itr).GetVisibility()) ||
         (vision > 0 && radius > vision)) {
-      to_delete.push_back(i);
+      // Decrement here so that it still points to something valid afterwards.
+      auto temp_itr = itr;
+      --itr;
+      factors->erase(temp_itr);
     }
-  }
-
-  for (auto index : to_delete) {
-    factors->erase(factors->begin() + index);
   }
 }
 
-void Grid::RemoveUnusable(::std::vector<int> *xs, ::std::vector<int> *ys) {
-  for (uint32_t i = 0; i < xs->size(); ++i) {
-    const Cell *cell = &grid_[(*xs)[i] * x_size_ + (*ys)[i]];
+void Grid::RemoveUnusable(::std::list<int> *xs, ::std::list<int> *ys) {
+	auto x_itr = xs->begin();
+	auto y_itr = ys->begin();
+  for (; x_itr != xs->end(); ++x_itr, ++y_itr) {
+    const Cell *cell = &grid_[*x_itr * x_size_ + *y_itr];
     if (cell->Blacklisted || cell->ConflictedObject) {
       // This cell is blacklisted or unusable. Remove it from consideration.
-      xs->erase(xs->begin() + i);
-      ys->erase(ys->begin() + i);
-
-      // We lost something, so we should stay on the same index.
-      --i;
+      auto temp_x = x_itr;
+      auto temp_y = y_itr;
+      // Decrement here so that it still points to something valid afterwards.
+      --x_itr;
+      --y_itr;
+      xs->erase(temp_x);
+      ys->erase(temp_y);
     }
   }
 }

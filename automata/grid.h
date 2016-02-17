@@ -1,6 +1,7 @@
 #ifndef ECOSYSTEM_AUTOMATA_GRID_H_
 #define ECOSYSTEM_AUTOMATA_GRID_H_
 
+#include <list>
 #include <vector>
 
 #include "automata/macros.h"
@@ -123,7 +124,7 @@ class Grid {
   // we could move. See GetNeighborhood for an explanation of levels.
   // vision: The maximum number of cells we can be from any factor and still
   // perceive it.
-  bool MoveObject(int x, int y, const ::std::vector<MovementFactor> &factors,
+  bool MoveObject(int x, int y, const ::std::list<MovementFactor> &factors,
                   int *new_x, int *new_y, int levels = 1, int vision = -1);
   // "Bakes" the state of the grid. Commits any new changes that were made since
   // the last time this was called to the actual grid. Also un-blacklists all
@@ -180,9 +181,9 @@ class Grid {
   // ys: The y coordinates of the locations in the neighborhood.
   // probabilities: an array of probability values. Should be an array capable
   // of holding a number of items equal to the size of the xs and ys vectors.
-  void CalculateProbabilities(::std::vector<MovementFactor> &factors,
-                              const ::std::vector<int> &xs,
-                              const ::std::vector<int> &ys,
+  void CalculateProbabilities(::std::list<MovementFactor> &factors,
+                              const ::std::list<int> &xs,
+                              const ::std::list<int> &ys,
                               double *probabilities);
   // Gets the locations that are in a neighborhood.
   // If any locations that should be in the neighborhood are outside the bounds
@@ -199,8 +200,8 @@ class Grid {
   // surrounding them. etc.
   // Returns: true if it succeeds, false if the grid is not initialized, or if
   // the neighborhood would be out of its bounds.
-  bool GetNeighborhoodLocations(int x, int y, ::std::vector<int> *xs,
-                                ::std::vector<int> *ys, int levels = 1);
+  bool GetNeighborhoodLocations(int x, int y, ::std::list<int> *xs,
+                                ::std::list<int> *ys, int levels = 1);
   // Takes a set of probabilities, and uses them to calculate where an object
   // should move in its neighborhood.
   // probabilities: The array of probabilities for each location, generally
@@ -211,8 +212,8 @@ class Grid {
   // same one as was passed to CalculateProbabilities.
   // new_x: The x coordinate of the organism's new location.
   // new_y: The y coordinate of the organism's new location.
-  void DoMovement(const double *probabilities, const ::std::vector<int> &xs,
-                  const ::std::vector<int> &ys, int *new_x, int *new_y);
+  void DoMovement(const double *probabilities, const ::std::list<int> &xs,
+                  const ::std::list<int> &ys, int *new_x, int *new_y);
   // Looks at factor visibilities and removes any that are not visible to the
   // object.
   // x: The x coordinate of the objects's position.
@@ -220,13 +221,13 @@ class Grid {
   // factors: The vector of factors that we will be processing.
   // vision: Maximum distance we can be from a factor in cells, and still
   // perceive it. A negative value means that there is no limit.
-  void RemoveInvisible(int x, int y, ::std::vector<MovementFactor> *factors,
+  void RemoveInvisible(int x, int y, ::std::list<MovementFactor> *factors,
                        int vision);
   // Removes any cells for which the Blacklisted attribute is set to true or
   // which are conflicted from consideration for movement.
   // xs: The x coordinates of the cells to consider.
   // ys: The y coordinates of the cells to consider.
-  void RemoveUnusable(::std::vector<int> *xs, ::std::vector<int> *ys);
+  void RemoveUnusable(::std::list<int> *xs, ::std::list<int> *ys);
 
   // Returns whether or not the underlying array is initialized.
   bool IsInitialized() { return initialized_; }

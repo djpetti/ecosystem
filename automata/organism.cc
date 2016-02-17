@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <list>
 #include <vector>
 
 #include "automata/organism.h"
@@ -27,6 +28,9 @@ bool Organism::UpdatePosition(int use_x /*= -1*/, int use_y /*= -1*/) {
   assert(grid_->MoveObject(use_x, use_y, factors_, &x, &y, speed_, vision_) &&
          "MoveObject() failed unexpectedly.");
 
+  if (x_ == x && y_ == y) {
+    printf("Still staying in the same place.\n");
+  }
   if (!SetPosition(x, y)) {
     return false;
   }
@@ -117,13 +121,12 @@ void Organism::Die() {
 
 void Organism::CleanupOrganism(const Organism &organism) {
   // Check to see if we have any movement factors related to this organism.
-  for (uint32_t i = 0; i < factors_.size(); ++i) {
-    MovementFactor &factor = factors_[i];
-    if (&organism == factor.GetOrganism()) {
+  auto itr = factors_.begin();
+  for (; itr != factors_.end(); ++itr) {
+    if (&organism == itr->GetOrganism()) {
       // This one has to go.
-      factors_.erase(factors_.begin() + i);
-      // Since we lost one, we have to stay on the same index.
-      --i;
+      // Post-decrement so that it still points to something valid.
+      factors_.erase(itr--);
     }
   }
 }
