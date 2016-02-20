@@ -49,7 +49,8 @@ class GridObject {
   // will be set to -1.
   // x: Set to the x coordinate.
   // y: Set to the y coordinate.
-  void GetBakedPosition(int *x, int *y);
+  // Returns: false if the object has never been baked anywhere, true otherwise.
+  bool GetBakedPosition(int *x, int *y);
   // Removes the object from the grid. It is okay to call this function more
   // than once.
   bool RemoveFromGrid();

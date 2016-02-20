@@ -23,15 +23,18 @@ bool GridObject::RemoveFromGrid() {
         return false;
       }
     }
+
+		on_grid_ = false;
+
     int baked_x, baked_y;
-    GetBakedPosition(&baked_x, &baked_y);
-    // Remove ourselves if we're baked somewhere.
-    if (grid_->GetOccupant(baked_x, baked_y) == this) {
-      grid_->ForcePurgeOccupant(baked_x, baked_y);
+    if (!GetBakedPosition(&baked_x, &baked_y)) {
+    	// We've never been baked anywhere at all.
+    	return true;
     }
+    // Remove ourselves if we're baked somewhere.
+		grid_->ForcePurgeOccupant(baked_x, baked_y);
   }
 
-  on_grid_ = false;
   return true;
 }
 
@@ -81,7 +84,7 @@ bool GridObject::SetPosition(int x, int y) {
   return !conflicted;
 }
 
-void GridObject::GetBakedPosition(int *x, int *y) {
+bool GridObject::GetBakedPosition(int *x, int *y) {
   if (grid_->GetOccupant(x_, y_) == this) {
     // The grid has been updated, meaning that our current positions are the
     // baked ones instead of our previous positions.
@@ -90,9 +93,15 @@ void GridObject::GetBakedPosition(int *x, int *y) {
   } else {
     // The grid hasn't been updated, meaning that our current positions are
     // as-of-yet unbaked.
+    if (last_x_ < 0 || last_y_ < 0) {
+    	// We haven't been baked anywhere.
+    	return false;
+    }
     *x = last_x_;
     *y = last_y_;
   }
+
+  return true;
 }
 
 GridObject *GridObject::GetConflict() {

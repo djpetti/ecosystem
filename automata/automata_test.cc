@@ -228,15 +228,10 @@ TEST_F(AutomataTest, PositioningTest) {
   ASSERT_TRUE(object1.Initialize(2, 2));
   ASSERT_TRUE(object2.Initialize(0, 0));
 
-  // Before we update, our baked positions should be at -1.
+  // Before we update, we should have no baked positions.
   int baked_x, baked_y;
-  object1.GetBakedPosition(&baked_x, &baked_y);
-  EXPECT_EQ(-1, baked_x);
-  EXPECT_EQ(-1, baked_y);
-
-  object2.GetBakedPosition(&baked_x, &baked_y);
-  EXPECT_EQ(-1, baked_x);
-  EXPECT_EQ(-1, baked_y);
+  EXPECT_FALSE(object1.GetBakedPosition(&baked_x, &baked_y));
+  EXPECT_FALSE(object2.GetBakedPosition(&baked_x, &baked_y));
 
   ASSERT_TRUE(grid_.Update());
 
@@ -430,7 +425,7 @@ TEST_F(AutomataTest, GetConflictTest) {
 }
 
 // Does CleanupOrganism work properly?
-TEST_F(AutomataTest, CleaunupOrganismTest) {
+TEST_F(AutomataTest, CleanupOrganismTest) {
   Organism organism1(&grid_, 0);
   Organism organism2(&grid_, 1);
   ASSERT_TRUE(organism1.Initialize(0, 0));
