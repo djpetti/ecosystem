@@ -157,7 +157,9 @@ class AnimalHandler(UpdateHandler):
 
     # Update animal position.
     try:
+      print("Updating position.")
       organism.update_position()
+      print("Updated position.")
     except OrganismError:
       # Check to see if we have a conflict we can resolve.
       organism.handle_conflict()

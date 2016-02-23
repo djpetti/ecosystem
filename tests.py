@@ -95,9 +95,9 @@ class TestOrganism(unittest.TestCase):
     predator.set_attributes(predator_attributes)
 
     # Initialize some default metabolisms for the organisms.
-    predator.metabolism = AnimalMetabolism(0.5, 0.1, 310.15, 0.5, 0.37, 1)
+    predator.metabolism = AnimalMetabolism(0.5, 0.1, 310.15, 0.5, 0.37)
     self.__organism.metabolism = AnimalMetabolism(0.5, 0.1, 310.15,
-                                                  0.5, 0.37, 1)
+                                                  0.5, 0.37)
     original_energy = predator.metabolism.energy()
 
     # Move the two organisms into a position where they conflict.
