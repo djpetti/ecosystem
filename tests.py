@@ -117,6 +117,36 @@ class TestOrganism(unittest.TestCase):
     # grid.
     self.assertTrue(self.__grid.Update())
 
+  """ Can we handle mating properly? """
+  def test_mating(self):
+    female = organism.Organism(self.__grid, (1, 1), sex=0)
+    male = organism.Organism(self.__grid, (2, 2), sex=1)
+    self.assertTrue(self.__grid.Update())
+
+    # These attributes should cause the two organisms to mate with each other
+    # and produce offspring.
+    attributes = {"Reproduction": {"WantsSex": 1.0,
+                  "ConceptionProbability": 1.0}, "Taxonomy": {"Genus": "Test",
+                  "Species": "Animal"}}
+    female.set_attributes(attributes)
+    male.set_attributes(attributes)
+
+    # Move them so they conflict.
+    female.set_position((1, 1))
+    with self.assertRaises(grid_object.GridObjectError):
+      male.set_position((1, 1))
+
+    # Handle the conflict.
+    male.handle_conflict()
+
+    # Check that the female is pregnant.
+    self.assertTrue(female.get_pregnant())
+    # Check that the male is not pregnant.
+    self.assertFalse(male.get_pregnant())
+
+    # We should have also used the default conflict handler to move one of them
+    # away.
+    self.assertNotEqual(male.get_position(), female.get_position())
 
 """ Tests the library class. """
 class TestLibrary(unittest.TestCase):

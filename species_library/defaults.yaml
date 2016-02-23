@@ -37,5 +37,11 @@ Metabolism:
     # The default visibility to use for the above movement factors.
     PredatorFactorVisibility: -1
 
+Reproduction:
+  # A fixed probability that an organism will be willing to mate.
+  WantsSex: 0.5
+  # The probability that any given mating will result in conception.
+  ConceptionProbability: 0.40
+
 # The maximum distance that the organism can perceive things at.
 Vision: 100

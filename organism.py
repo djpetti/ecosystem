@@ -6,6 +6,7 @@ class OrganismError(Exception):
 
 
 import logging
+import random
 
 from swig_modules.automata import Organism as C_Organism
 from update_handler import UpdateHandler
@@ -46,14 +47,26 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ index: The index into the grid_objects array of the simulation this
   organism is part of.
   grid: The grid that this organism is part of.
-  position: The position of the object on the grid, in the form (x, y). """
-  def __init__(self, grid, position):
+  position: The position of the object on the grid, in the form (x, y).
+  sex: Optional parameter, allows us to specify the sex of the organism. 1 means
+       male, 0 means female. """
+  def __init__(self, grid, position, sex=None):
     # Data read from a configuration file that describes this organism.
     self._attributes = {}
 
     # Handlers that apply to this organism.
     self.__handlers = []
     self.__grid = grid
+
+    # The sex of the organism. This is determined at creation time.
+    if sex != None:
+      self.__sex = sex
+    else:
+      # Choose a random one.
+      self.__sex = random.randint(0, 1)
+      logger.debug("Setting organism sex: %d\n", self.__sex)
+    # Whether or not the organism is pregnant.
+    self.__pregnant = False
 
     # Metabolism handler for this organism. A handler will initialize it,
     # because it is unique depending on the organism.
@@ -152,6 +165,9 @@ class Organism(grid_object.GridObject, AttributeHelper):
       # That worked, we're done.
       return
 
+    # Handle mating. Whether this is successful or not, we still need to run the
+    # default conflict handler to actually move an organism.
+    self.__handle_sexual_reproduction(conflicted)
     # Fall back on the default conflict handler.
     self.__default_conflict_handler()
 
@@ -199,6 +215,57 @@ class Organism(grid_object.GridObject, AttributeHelper):
       return True
 
     return False
+
+  """ Handles sexual reproduction. This is the most complicated type of
+  reproduction, because it requires two organisms in the same location. That is
+  why it is implemented as a conflict handler.
+  Args:
+    conflicted: The organism we are conflicting with.
+  Returns:
+    True if the conflict was resolved, False otherwise. """
+  def __handle_sexual_reproduction(self, conflicted):
+    # First of all, we need to be the same species.
+    if not self.same_species(conflicted):
+      return False
+
+    if self.get_sex() + conflicted.get_sex() != 1:
+      # Despite SCOTUS, we don't implement gay marriage.
+      return False
+
+    # TODO (danielp): Eventually we'll need a better way of determining who's
+    # attracted to whom, but for now, we'll just use a fixed (configurable)
+    # probability of amorous intentions. (Note that, for now, all our
+    # love-making is entirely consentual.)
+    attracted_to_them = random.random()
+    if attracted_to_them > self.Reproduction.WantsSex:
+      return False
+    attracted_to_us = random.random()
+    if attracted_to_us > conflicted.Reproduction.WantsSex:
+      return False
+
+    # Now they're going to do it like they do on the Discovery Channel.
+    logger.info("Organism %d is mating with organism %d." % \
+                (self.get_index(), conflicted.get_index()))
+    # Of course, there's only a certain probability that they actually made a
+    # baby.
+    conceived = random.random()
+    if conceived < self.Reproduction.ConceptionProbability:
+      if not self.get_sex():
+        # We're pregnant.
+        logger.info("Organism %d is pregnant." % (self.get_index()))
+        self.__pregnant = True
+      else:
+        # We're the daddy.
+        logger.info("Organism %d is pregnant." % (conflicted.get_index()))
+        conflicted.__pregnant = True
+
+    return True
+
+  """ Gets the sex of this organism. We could make jokes about the name of this
+  method, but we're not going to.
+  Returns: 0 if the organism is female, 1 if it's male. """
+  def get_sex(self):
+    return self.__sex
 
   """ Get the handlers that apply to this organism. """
   def get_handlers(self):
@@ -260,3 +327,15 @@ class Organism(grid_object.GridObject, AttributeHelper):
   movement factors. """
   def get_vision(self):
     return self._object.get_vision()
+
+  """ Decides whether two organisms are of the same species.
+  Args:
+    other: The other organism we are checking with.
+  Returns: True if they are, False otherwise. """
+  def same_species(self, other):
+    return (self.Taxonomy.Genus == other.Taxonomy.Genus and \
+            self.Taxonomy.Species == other.Taxonomy.Species)
+
+  """ Returns: True if organism is pregnant, False otherwise. """
+  def get_pregnant(self):
+    return self.__pregnant
