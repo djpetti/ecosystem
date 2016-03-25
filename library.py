@@ -140,8 +140,10 @@ class Library:
   name: The organism's scientific name.
   grid: The grid to place this organism on.
   position: Where on the grid to place this organism, in the form (x, y).
+  iteration_time: How much time in the "real world" one simulation iteration
+  encompasses.
   Returns: An organism object containing this organism. """
-  def load_organism(self, name, grid, position):
+  def load_organism(self, name, grid, position, iteration_time):
     logger.debug("Loading '%s' from '%s'." % (name, self.__library))
 
     name = name.lower()
@@ -160,7 +162,7 @@ class Library:
     # Incorporate the defaults into our original data.
     merged = _merge_trees(data, defaults)
 
-    organism = Organism(grid, position)
+    organism = Organism(grid, position, iteration_time)
     organism.set_attributes(merged)
 
     if grid.scale() < 0:

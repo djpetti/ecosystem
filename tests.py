@@ -17,6 +17,18 @@ import update_handler
 import visualization
 
 
+""" This class specifically exists so that we can mess with internal parts of
+Organism for testing purposes. """
+class _OrganismForTesting(organism.Organism):
+  """ Allows us to manually set whether the organism is pregnant or not.
+  Args:
+    pregnant: Whether the organism is pregnant. """
+  def set_pregnant(self, pregnant):
+    self._pregnant = pregnant
+    if pregnant:
+      self._calculate_required_gestation()
+
+
 """ Tests the grid_object class. """
 class TestGridObject(unittest.TestCase):
   def setUp(self):
@@ -52,7 +64,8 @@ class TestOrganism(unittest.TestCase):
     grid_object.GridObject.clear_objects()
 
     self.__grid = C_Grid(10, 10)
-    self.__organism = organism.Organism(self.__grid, (0, 0))
+    self.__organism = _OrganismForTesting(self.__grid, (0, 0), 1)
+    self.__grid.Update()
 
   """ Does loading and setting attributes work as expected? """
   def test_attributes(self):
@@ -79,7 +92,7 @@ class TestOrganism(unittest.TestCase):
 
   """ Can we handle predation correctly? """
   def test_predation(self):
-    predator = organism.Organism(self.__grid, (1, 1))
+    predator = _OrganismForTesting(self.__grid, (1, 1), 0)
     self.assertTrue(self.__grid.Update())
 
     # These attributes will cause the predator organism to prey on the other
@@ -119,14 +132,15 @@ class TestOrganism(unittest.TestCase):
 
   """ Can we handle mating properly? """
   def test_mating(self):
-    female = organism.Organism(self.__grid, (1, 1), sex=0)
-    male = organism.Organism(self.__grid, (2, 2), sex=1)
+    female = _OrganismForTesting(self.__grid, (1, 1), 1, sex=0)
+    male = organism.Organism(self.__grid, (2, 2), 1, sex=1)
     self.assertTrue(self.__grid.Update())
 
     # These attributes should cause the two organisms to mate with each other
     # and produce offspring.
     attributes = {"Reproduction": {"WantsSex": 1.0,
-                  "ConceptionProbability": 1.0}, "Taxonomy": {"Genus": "Test",
+                  "ConceptionProbability": 1.0, "GestationMean": 1,
+                  "GestationStdDev": 0}, "Taxonomy": {"Genus": "Test",
                   "Species": "Animal"}}
     female.set_attributes(attributes)
     male.set_attributes(attributes)
@@ -147,6 +161,40 @@ class TestOrganism(unittest.TestCase):
     # We should have also used the default conflict handler to move one of them
     # away.
     self.assertNotEqual(male.get_position(), female.get_position())
+
+  """ Can we handle pregnancy and birth correctly? """
+  def test_pregnancy(self):
+    # Instantiate the pregnancy handler to register it.
+    update_handler.PregnancyHandler()
+
+    # Set pregnancy attributes. Make gestation last for 2 cycles.
+    attributes = {"Taxonomy": {"Kingdom": "Animalia"},
+                  "Metabolism": {"Animal": {"InitialMass": 0,
+                  "InitialFatMass": 0, "BodyTemperature": 0,
+                  "DragCoefficient": 0}},
+                  "Scale": 1.0, "Vision": -1,
+                  "Reproduction": {"GestationMean": 2.0 / (24.0 * 60.0 * 60.0),
+                                   "GestationStdDev": 0}}
+    self.__organism.set_attributes(attributes)
+
+    # Make it initially pregnant.
+    self.__organism.set_pregnant(True)
+    self.assertEqual((False, []), self.__organism.get_offspring())
+
+    # Wait one cycle.
+    self.__organism.update()
+    # Nothing should change.
+    print("Checking pregnancy.")
+    self.assertEqual(True, self.__organism.get_pregnant())
+    self.assertEqual((False, []), self.__organism.get_offspring())
+
+    # Try it again.
+    self.__organism.update()
+    # Now it should have given birth.
+    self.assertEqual(False, self.__organism.get_pregnant())
+    new, offspring = self.__organism.get_offspring()
+    self.assertTrue(new)
+    self.assertNotEqual([], offspring)
 
 """ Tests the library class. """
 class TestLibrary(unittest.TestCase):
@@ -193,9 +241,9 @@ class TestLibrary(unittest.TestCase):
   """ Can we load an organism successfully? """
   def test_load(self):
     # These various notations should work.
-    self.__library.load_organism("test species", self.__grid, (0, 0))
+    self.__library.load_organism("test species", self.__grid, (0, 0), 0)
     organism = \
-        self.__library.load_organism("Test Species", self.__grid, (1, 1))
+        self.__library.load_organism("Test Species", self.__grid, (1, 1), 0)
 
     # Test that everything came out as we expected it to.
     self.assertEqual(organism.get_position(), (1, 1))
@@ -234,7 +282,7 @@ class TestVisualizations(unittest.TestCase):
     test_attributes = {"Visualization": {"Color": "#00FF00"}}
 
     self.__grid = C_Grid(100, 100)
-    self.__grid_object = organism.Organism(self.__grid, (5, 5))
+    self.__grid_object = organism.Organism(self.__grid, (5, 5), 0)
     self.__grid_object.set_attributes(test_attributes)
 
     self.__grid_vis = visualization.GridVisualization(100, 100)
@@ -336,12 +384,17 @@ class TestUpdateHandler(unittest.TestCase):
     # Simply instantiating our handler should register it.
     self.__test_handler = TestUpdateHandler.TestingHandler()
 
-    self.__organism1 = organism.Organism(grid, (0, 0))
-    self.__organism2 = organism.Organism(grid, (1, 1))
-    self.__organism3 = organism.Organism(grid, (2, 2))
+    self.__organism1 = organism.Organism(grid, (0, 0), 0)
+    self.__organism2 = organism.Organism(grid, (1, 1), 0)
+    self.__organism3 = organism.Organism(grid, (2, 2), 0)
     self.__organism1.set_attributes(test_attributes1)
     self.__organism2.set_attributes(test_attributes2)
     self.__organism3.set_attributes(test_attributes3)
+
+  def tearDown(self):
+    # Clear registered handlers between tests so they don't influence
+    # each-other.
+    update_handler.UpdateHandler.clear_registered_handlers()
 
   """ Do static filters filter what we want them to? """
   def test_static_filter(self):
@@ -355,16 +408,16 @@ class TestUpdateHandler(unittest.TestCase):
     self.assertNotIn(self.__test_handler, handlers)
 
     # Organism 3 should not get past the static filter.
-    self.__organism3.update(0)
+    self.__organism3.update()
 
   """ Do dynamic filters work properly? """
   def test_dynamic_filter(self):
     # The dynamic filter should block this one.
-    self.__organism1.update(0)
+    self.__organism1.update()
 
     # The other one should work.
     with self.assertRaises(RuntimeError):
-      self.__organism2.update(0)
+      self.__organism2.update()
 
 if __name__ == "__main__":
   unittest.main()

@@ -23,8 +23,10 @@ something that gets run every iteration of the simulation on a filtered subset
 of the organisms being updated. This framework is designed so that users
 can easily implement custom handlers. """
 class UpdateHandler:
-  """ A list of all the handlers currently known to this simulation. """
+  # A list of all the handlers currently known to this simulation.
   handlers = []
+  # Here to make sure we don't add two instances of the same handler.
+  handler_names = set([])
 
   """ Checks if an organism matches the static filtering criteria for all the
   registered handlers, and add the handler to the organism's list of handlers.
@@ -39,14 +41,24 @@ class UpdateHandler:
         # Run the handler setup function on the organism.
         handler.setup(organism)
 
+  """ Clears all handlers that are currently registered. """
+  @classmethod
+  def clear_registered_handlers(cls):
+    logger.info("Clearing all currently registed handlers...")
+    cls.handlers = []
+    cls.handler_names = set([])
+
   """ All subclasses should call this constructor. """
   def __init__(self):
     # A dictionary storing what attribute values we are filtering for.
     self.__static_filters = {}
 
     # Register handler.
-    logger.info("Registering handler '%s'." % (self.__class__.__name__))
-    UpdateHandler.handlers.append(self)
+    name = self.__class__.__name__
+    if name not in UpdateHandler.handler_names:
+      logger.info("Registering handler '%s'." % (name))
+      UpdateHandler.handlers.append(self)
+      UpdateHandler.handler_names.add(name)
 
   """ Specifies that only organisms that have a particular attribute set in a
   particular way will be handled by this handler. These handlers will be run
@@ -247,6 +259,29 @@ class PlantHandler(UpdateHandler):
     if organism.metabolism.energy() <= 0:
       logger.info("Killing organism due to lack of energy.")
       organism.die()
+
+
+""" Handles organism pregnancy and childbirth. """
+class PregnancyHandler(UpdateHandler):
+  def __init__(self):
+    super().__init__()
+
+    # Only animals can be pregnant.
+    self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
+
+  def dynamic_filter(self, organism):
+    # Check to make sure that the organism is actually pregnant.
+    return organism.get_pregnant()
+
+  def run(self, organism, iteration_time):
+    # Check gestation period.
+    print("Running pregnancy handler.")
+    give_birth = organism.should_give_birth(iteration_time)
+    if give_birth:
+      logger.info("Organism %d is giving birth." % (organism.get_index()))
+
+      # Create a new baby organism.
+      offspring = organism.make_offspring()
 
 
 # Go and register all the update handlers.

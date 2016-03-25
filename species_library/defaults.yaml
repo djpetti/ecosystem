@@ -43,5 +43,11 @@ Reproduction:
   # The probability that any given mating will result in conception.
   ConceptionProbability: 0.40
 
+  # Mean length of a pregnancy, in days.
+  # TODO(danielp): Make this not rediculously low in production.
+  GestationMean: 0.0007
+  # Standard deviation for the length of a pregnancy, in days.
+  GestationStdDev: 0.0002
+
 # The maximum distance that the organism can perceive things at.
 Vision: 100

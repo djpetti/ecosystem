@@ -23,6 +23,11 @@ class AttributeHelper:
 
     # A list of handlers that apply to this organism.
     self.__handlers = []
+    # Maintains references to all the offspring this organism has ever produces.
+    self.__offspring = []
+    # Whether or not our list of offspring was updated since our last call to
+    # get_offspring().
+    self.__new_offspring = False
 
   """ Gets an attribute stored in the collection of this helper.
   name: The attribute name. """
@@ -48,15 +53,23 @@ class Organism(grid_object.GridObject, AttributeHelper):
   organism is part of.
   grid: The grid that this organism is part of.
   position: The position of the object on the grid, in the form (x, y).
+  iteration_time: The time in the "real world" that one iteration of the
+  simulation encompasses.
   sex: Optional parameter, allows us to specify the sex of the organism. 1 means
-       male, 0 means female. """
-  def __init__(self, grid, position, sex=None):
+      male, 0 means female.
+  allow_conflict: Most of the time, we want it to fail loudly if it encounters a
+      conflict initializing the organism. This flag allows us to silence that
+      behavior if we set it to True. """
+  def __init__(self, grid, position, iteration_time, sex=None,
+               allow_conflict=False):
     # Data read from a configuration file that describes this organism.
     self._attributes = {}
 
     # Handlers that apply to this organism.
     self.__handlers = []
     self.__grid = grid
+
+    self.__iteration_time = iteration_time
 
     # The sex of the organism. This is determined at creation time.
     if sex != None:
@@ -66,7 +79,14 @@ class Organism(grid_object.GridObject, AttributeHelper):
       self.__sex = random.randint(0, 1)
       logger.debug("Setting organism sex: %d\n", self.__sex)
     # Whether or not the organism is pregnant.
-    self.__pregnant = False
+    self._pregnant = False
+    # How long we have been pregnant for.
+    self.__gestation_time = 0
+
+    # List of all offspring that we have produced.
+    self.__offspring = []
+    # Whether we have added new offspring this iteration.
+    self.__new_offspring = False
 
     # Metabolism handler for this organism. A handler will initialize it,
     # because it is unique depending on the organism.
@@ -78,16 +98,18 @@ class Organism(grid_object.GridObject, AttributeHelper):
     self._object = C_Organism(self.__grid,
                               grid_object.GridObject.current_index)
     if not self._object.Initialize(position[0], position[1]):
-      logger.log_and_raise(OrganismError, "Failed to initialize organism.")
+      if not allow_conflict:
+        logger.log_and_raise(OrganismError, "Failed to initialize organism.")
+      logger.warning("Failed to initialize organism.")
 
     # Add the organism to the list of grid objects.
     grid_object.GridObject._add_object(self)
 
   """ Updates the status of this organism. Should be run every iteration.
-  iteration_time: Simulation time since the last iteration.
   Returns: True if it proceeds normally, false if this organism is dead or
   otherwise defunct. """
-  def update(self, iteration_time):
+  def update(self):
+    print("Updating organism.")
     logger.debug("Updating organism %d." % (self.get_index()))
 
     if not self.is_alive():
@@ -97,7 +119,8 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Run handlers.
     for handler in self.__handlers:
-      handler.handle_organism(self, iteration_time)
+      print("Running handler.")
+      handler.handle_organism(self, self.__iteration_time)
 
     return True
 
@@ -253,11 +276,13 @@ class Organism(grid_object.GridObject, AttributeHelper):
       if not self.get_sex():
         # We're pregnant.
         logger.info("Organism %d is pregnant." % (self.get_index()))
-        self.__pregnant = True
+        self._pregnant = True
+        self._calculate_required_gestation()
       else:
         # We're the daddy.
         logger.info("Organism %d is pregnant." % (conflicted.get_index()))
-        conflicted.__pregnant = True
+        conflicted._pregnant = True
+        conflicted._calculate_required_gestation()
 
     return True
 
@@ -338,4 +363,63 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
   """ Returns: True if organism is pregnant, False otherwise. """
   def get_pregnant(self):
-    return self.__pregnant
+    return self._pregnant
+
+  """ Figure out how long we should wait before giving birth, if we are
+  pregnant. """
+  def _calculate_required_gestation(self):
+    # Gestation times will be normally distributed. They are also in days, so we
+    # have to convert to cycles.
+    mean = self.Reproduction.GestationMean * \
+        24.0 * 60.0 * 60.0 / self.__iteration_time
+    stddev = self.Reproduction.GestationStdDev * \
+        24.0 * 60.0 * 60.0 / self.__iteration_time
+    logger.debug("Expected gestation is %d cycles, with stddev of %d." % \
+                 (mean, stddev))
+    self.__required_gestation = random.gauss(mean, stddev)
+    logger.info("Gestation time for %d: %f." % (self.get_index(),
+                                                self.__required_gestation))
+
+  """ Checks if an organism should give birth. If they shouldn't, it increments
+  the counter. This is meant to be called every cycle, and assumes that the
+  organism is pregnant.
+  cycle_time: How long each cycle is. (s)
+  Returns: True if the organism should give birth, False otherwise. """
+  def should_give_birth(self, cycle_time):
+    self.__gestation_time += cycle_time
+    print("Gestation time, required: %f, %f\n" % (self.__gestation_time,
+                                                  self.__required_gestation))
+
+    if self.__gestation_time >= self.__required_gestation:
+      # We've waited long enough.
+      self._pregnant = False
+      self.__gestation_time = 0
+      return True
+
+    return False
+
+  """ Makes a replica of this organism that will serve as its offspring.
+  Returns:
+    The organism that was created. """
+  def make_offspring(self):
+    offspring = Organism(self.__grid, self.get_position(),
+                         self.__iteration_time, allow_conflict=True)
+    # Add our attributes.
+    offspring.set_attributes(self._attributes)
+    # Initially, we're guaranteed to have a conflict with our mother, so run the
+    # default conflict handler now.
+    offspring.__default_conflict_handler()
+
+    # Add it to our list of offspring.
+    self.__offspring.append(offspring)
+    self.__new_offspring = True
+    return offspring
+
+  """ Gets a list of all the offspring this organism has given birth to.
+  Returns:
+    A tuple containing whether or not we have any new offspring since we last
+    called this function, and the list of offspring. """
+  def get_offspring(self):
+    new_offspring = self.__new_offspring
+    self.__new_offspring = False
+    return new_offspring, self.__offspring

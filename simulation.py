@@ -69,13 +69,10 @@ class Simulation:
       y_pos = organism[3]
 
       library = Library(library_name)
-      organism = library.load_organism(name, self.__grid, (x_pos, y_pos))
+      organism = library.load_organism(name, self.__grid, (x_pos, y_pos),
+                                       self.__iteration_time)
       logger.info("Adding new grid object at (%d, %d)." % (x_pos, y_pos))
-
-      self.__grid_objects.append(organism)
-
-      # Add a visualization for the organism.
-      visualization.GridObjectVisualization(self.__grid_vis, organism)
+      self.__add_to_simulation(organism)
 
     # Update the grid to bake everything in its initial position.
     if not self.__grid.Update():
@@ -100,9 +97,15 @@ class Simulation:
     # Update the status of all objects.
     to_delete = []
     for grid_object in self.__grid_objects:
-      if not grid_object.update(self.__iteration_time):
+      if not grid_object.update():
         # Organism died. Remove it. (Already logged.)
         to_delete.append(grid_object)
+
+      # Check if we have any new offspring.
+      new, offspring = grid_object.get_offspring()
+      if new:
+        logger.debug("Found new offspring from %d.\n", grid_object.get_id())
+        self.__add_to_simulation(offspring[-1])
 
     for organism in to_delete:
       self.__grid_objects.remove(organism)
@@ -113,6 +116,15 @@ class Simulation:
 
     self.__iteration.value += 1
     logger.debug("Running iteration %d." % (self.__iteration.value))
+
+  """ Actually adds a created organism to the simulation.
+  Args:
+    organism: The organism to add. """
+  def __add_to_simulation(self, organism):
+    self.__grid_objects.append(organism)
+
+    # Add a visualization for the organism.
+    visualization.GridObjectVisualization(self.__grid_vis, organism)
 
   """ Start the simulation. """
   def start(self):

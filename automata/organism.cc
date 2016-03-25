@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stdint.h>
-#include <stdio.h> // TEMP
+#include <stdio.h>  // TEMP
 #include <stdlib.h>
 #include <time.h>
 
@@ -11,8 +11,7 @@
 
 namespace automata {
 
-Organism::Organism(Grid *grid, int index)
-    : GridObject(grid, index) {
+Organism::Organism(Grid *grid, int index) : GridObject(grid, index) {
   srand(time(NULL));
 }
 
@@ -42,14 +41,14 @@ void Organism::BlacklistOccupied(int x, int y, bool blacklisting, int levels) {
   ::std::vector<::std::vector<GridObject *>> in_neighborhood;
   // Once again, this should only fail if we're out of grid bounds.
   printf("Getting neighborhood.\n");
-  assert(grid_->GetNeighborhood(x, y, &in_neighborhood,
-              levels, true) && "GetNeighborhood() failed unexpectedly.");
+  assert(grid_->GetNeighborhood(x, y, &in_neighborhood, levels, true) &&
+         "GetNeighborhood() failed unexpectedly.");
   printf("Starting for loop.\n");
   for (auto level : in_neighborhood) {
     for (auto *object : level) {
       int blacklist_x, blacklist_y;
       object->get_position(&blacklist_x, &blacklist_y);
-      printf("Blacklisting: (%d, %d).\n", blacklist_x, blacklist_y);
+      printf("(Un)Blacklisting: (%d, %d).\n", blacklist_x, blacklist_y);
       grid_->SetBlacklisted(blacklist_x, blacklist_y, blacklisting);
     }
   }
@@ -72,17 +71,26 @@ bool Organism::DefaultConflictHandler() {
   int random = rand() % 2;
 
   Organism *to_move;
+  Organism *other_option;
   if (random) {
     to_move = this;
+    other_option = organism;
   } else {
     to_move = organism;
+    other_option = this;
   }
 
   int baked_x, baked_y;
   printf("Getting baked position.\n");
-  to_move->GetBakedPosition(&baked_x, &baked_y);
+  if (!to_move->GetBakedPosition(&baked_x, &baked_y)) {
+    // If this organism is not baked, move the other one.
+    to_move = other_option;
+    assert(to_move->GetBakedPosition(&baked_x, &baked_y) &&
+           "Resolving conflict would force move of non-baked organism, which "
+           "is disallowed.");
+  }
   bool blacklisted_old = false;
-  printf("Checking pending.\n");
+  printf("Checking pending for (%d, %d)\n", baked_x, baked_y);
   if (grid_->GetPending(baked_x, baked_y)) {
     // We need to blacklist where we came from too.
     grid_->SetBlacklisted(baked_x, baked_y, true);
@@ -101,6 +109,9 @@ bool Organism::DefaultConflictHandler() {
   if (!to_move->UpdatePosition(baked_x, baked_y)) {
     // This means that our area is so densely populated that we
     // literally can't move anywhere.
+    // TODO (danielp): The way higher-level code is written, this should
+    // technically never happen. Make sure this triggers an assertion failure
+    // somewhere.
     return false;
   }
 
@@ -115,9 +126,7 @@ bool Organism::DefaultConflictHandler() {
   return true;
 }
 
-void Organism::Die() {
-  alive_ = false;
-}
+void Organism::Die() { alive_ = false; }
 
 void Organism::CleanupOrganism(const Organism &organism) {
   // Check to see if we have any movement factors related to this organism.

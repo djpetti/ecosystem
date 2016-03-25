@@ -384,6 +384,8 @@ bool Grid::Update() {
   for (int i = 0; i < x_size_ * y_size_; ++i) {
     if (grid_[i].ConflictedObject) {
       // We can't update if we still have unresolved conflicts.
+      printf("Not updating due to organism %d\n",
+             grid_[i].ConflictedObject->get_index());
       return false;
     }
 
