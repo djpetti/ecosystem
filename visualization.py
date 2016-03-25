@@ -209,6 +209,8 @@ class GridObjectVisualization:
 
     # The tkinter index of the object.
     self.__index = 0
+    # Tkinter index of the object sex indicator.
+    self.__text_index = 0
 
     # Register with the grid.
     self.__grid.add_grid_object(self)
@@ -219,6 +221,8 @@ class GridObjectVisualization:
   def __del__(self):
     canvas = self.__grid.get_canvas()
     canvas.delete(self.__index)
+    if self.__text_index:
+      canvas.delete(self.__text_index)
 
   """ Draws the object in a specific location.
   position: Position on the grid to draw the object in, in the form (x, y). """
@@ -233,8 +237,18 @@ class GridObjectVisualization:
       # Create the object for the first time.
       self.__index = canvas.create_oval(*coordinates,
           fill = self.__color, outline = self.__color)
+
+      if (isinstance(self.__object, Organism) and \
+          self.__object.Taxonomy.Kingdom in ["Opisthokonta", "Animalia"]):
+        if self.__object.get_sex():
+          text = "M"
+        else:
+          text = "F"
+        self.__text_index = canvas.create_text(x, y, text=text)
     else:
       canvas.coords(self.__index, *coordinates)
+      if self.__text_index:
+        canvas.coords(self.__text_index, x, y)
 
   """ Checks if the object we are linked to has moved and update this object's
   position accordingly.
@@ -255,6 +269,8 @@ class GridObjectVisualization:
   def move(self, x, y):
     canvas = self.__grid.get_canvas()
     canvas.move(self.__index, x, y)
+    if self.__text_index:
+      canvas.move(self.__text_index, x, y)
 
   """ Returns: The position of the object on the canvas. """
   def get_pixel_position(self):
