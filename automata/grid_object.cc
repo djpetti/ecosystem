@@ -59,13 +59,13 @@ bool GridObject::SetPosition(int x, int y) {
 
   if (request_stasis) {
     // If we're staying in the same place, we're done.
-    return true;
+    return !conflicted;
   }
 
   printf("New position: (%d, %d)\n", x, y);
   printf("Old position: (%d, %d)\n", x_, y_);
   // We have to remove ourself from our old location on the grid.
-  if (grid_->GetOccupant(x_, y_) != this) {
+  if (grid_->GetPending(x_, y_) == this || grid_->GetConflict(x_, y_) == this) {
     // The grid hasn't been updated since the last time we set the position.
     assert(grid_->PurgeNew(x_, y_, this) &&
            "PurgeNew() should not return false.");

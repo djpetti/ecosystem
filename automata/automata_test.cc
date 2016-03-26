@@ -446,5 +446,31 @@ TEST_F(AutomataTest, CleanupOrganismTest) {
   EXPECT_TRUE(new_factors.empty());
 }
 
+// Does the organisms class handle some of the stasis request edge cases
+// correctly? (This was an issue in the past.)
+TEST_F(AutomataTest, OrganismStasisTest) {
+  GridObject object1(&grid_, 0);
+  GridObject object2(&grid_, 1);
+  ASSERT_TRUE(object1.Initialize(0, 0));
+  ASSERT_TRUE(object2.Initialize(1, 1));
+  EXPECT_TRUE(grid_.Update());
+
+  // We should be able to overwrite (0, 0).
+  EXPECT_TRUE(object2.SetPosition(0, 0));
+  // Trying to write it back to the original should create a conflict.
+  EXPECT_FALSE(object1.SetPosition(0, 0));
+  // Clear the conflict and purge object2.
+  EXPECT_TRUE(grid_.PurgeNew(0, 0, &object1));
+  EXPECT_TRUE(grid_.PurgeNew(0, 0, &object2));
+
+  // There's a fun case where we request stasis, and then try to move the object
+  // without updating, and it wasn't getting cleared properly.
+  EXPECT_TRUE(object1.SetPosition(0, 0));
+  // Now try to move it.
+  EXPECT_TRUE(object1.SetPosition(2, 2));
+  // The pending slot should be empty.
+  EXPECT_EQ(nullptr, grid_.GetPending(0, 0));
+}
+
 }  //  testing
 }  //  automata
