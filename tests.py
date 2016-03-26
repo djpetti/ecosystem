@@ -34,16 +34,16 @@ class TestGridObject(unittest.TestCase):
     self.assertEqual(1, object2.get_index())
     self.assertEqual(2, object3.get_index())
 
-    self.assertEqual([object1, object2, object3],
+    self.assertEqual(set([object1, object2, object3]),
                      grid_object.GridObject.grid_objects)
 
-    # Delete one, and make sure the others get rolled back.
+    # Delete one. Everything else should remain untouched.
     object2.delete()
 
     self.assertEqual(0, object1.get_index())
-    self.assertEqual(1, object3.get_index())
+    self.assertEqual(2, object3.get_index())
 
-    self.assertEqual([object1, object3], grid_object.GridObject.grid_objects)
+    self.assertEqual(set([object1, object3]), grid_object.GridObject.grid_objects)
 
 
 """ Tests the organism class. """

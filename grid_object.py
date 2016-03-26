@@ -16,8 +16,10 @@ class GridObjectError(Exception):
 """ A generic superclass for representing objects that are on the grid.
 Basically a thin wrapper around the C++ version of this class."""
 class GridObject(C_GridObject):
-  # A global list of all the grid objects in this simulation.
-  grid_objects = []
+  # A global set of all the grid objects in this simulation.
+  grid_objects = set([])
+  # A dictionary of all the grid objects in the simulation, keyed by index.
+  objects_by_index = {}
   # The current index we are on.
   current_index = 0
 
@@ -31,7 +33,7 @@ class GridObject(C_GridObject):
 
     GridObject._add_object(self)
 
-  """ We always have references sitting around in the grid_objects list, so this
+  """ We always have references sitting around in the grid_objects set, so this
   method deletes it manually.
   IMPORTANT: This should be called whenever someone is done with a grid object,
   otherwise, it will NEVER be garbage collected! """
@@ -39,13 +41,8 @@ class GridObject(C_GridObject):
     # Remove ourselves from the grid.
     self.remove()
 
-    # Remove ourselves from the list. To do this, we need to decrement the
-    # indices of everyone behind us.
-    for i in range(self.get_index() + 1, len(GridObject.grid_objects)):
-      grid_object = GridObject.grid_objects[i]
-      grid_object.set_index(i - 1)
-
-    GridObject.grid_objects.pop(self.get_index())
+    GridObject.grid_objects.remove(self)
+    GridObject.objects_by_index.pop(self.get_index())
 
   """ Add a new object to the list of grid objects, and increments
   current_index.
@@ -54,7 +51,8 @@ class GridObject(C_GridObject):
   def _add_object(cls, grid_object):
     logger.debug("Adding grid object with index %d." % (cls.current_index))
 
-    cls.grid_objects.append(grid_object)
+    cls.grid_objects.add(grid_object)
+    cls.objects_by_index[grid_object.get_index()] = grid_object
     cls.current_index += 1
 
   """ Gets a grid object from the list of grid objects by index.
@@ -62,7 +60,7 @@ class GridObject(C_GridObject):
   Returns: The grid object with the specified index. """
   @classmethod
   def get_by_index(cls, index):
-    grid_object = cls.grid_objects[index]
+    grid_object = cls.objects_by_index[index]
     if grid_object.get_index() != index:
       logger.log_and_raise(ValueError,
           "Grid object has set index %d, but is at index %d." % \
@@ -75,7 +73,8 @@ class GridObject(C_GridObject):
   for testing purposes or if you really know what you are doing. """
   @classmethod
   def clear_objects(cls):
-    cls.grid_objects = []
+    cls.grid_objects.clear()
+    cls.objects_by_index = {}
     cls.current_index = 0
 
   """ Does whatever changes that are required for this object from one iteration

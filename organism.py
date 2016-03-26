@@ -139,7 +139,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # conflicted slot, so we want the pending organism.
     position = self.get_position()
     conflicted = self._object.GetConflict()
-    logger.debug("Got pending object with index %d." % \
+    logger.debug("Got conflicted object with index %d." % \
                  (conflicted.get_index()))
 
     # Associate this object with a Python grid object.
