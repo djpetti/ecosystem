@@ -109,7 +109,6 @@ class Organism(grid_object.GridObject, AttributeHelper):
   Returns: True if it proceeds normally, false if this organism is dead or
   otherwise defunct. """
   def update(self):
-    print("Updating organism.")
     logger.debug("Updating organism %d." % (self.get_index()))
 
     if not self.is_alive():
@@ -119,7 +118,6 @@ class Organism(grid_object.GridObject, AttributeHelper):
 
     # Run handlers.
     for handler in self.__handlers:
-      print("Running handler.")
       handler.handle_organism(self, self.__iteration_time)
 
     return True
@@ -136,23 +134,36 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # Figure out which handlers apply to us.
     UpdateHandler.set_handlers_static_filtering(self)
 
+  """ Adds all necessary movement factors for this organism. Must be called
+  after the organism's attributes are set. """
+  def add_movement_factors(self):
     # As soon as an organism comes online, we need to create movement factors
     # representing it and add them for every organism that will be affected by
     # this one. It doesn't matter if we add movement factors to plants, because
     # their positions never get updated anyway.
     for organism in self.grid_objects:
+      # Skip ourselves.
+      if organism == self:
+        continue
+
       if isinstance(organism, Organism):
         if (hasattr(self, "Prey") and organism.scientific_name() in self.Prey):
           # Add a movement factor that causes them to flee us.
-          organism.add_factor_from_organism(self, True)
+          organism.__add_predator_prey_factor(self, True)
           # Add a movement factor that causes us to be attracted to them.
-          self.add_factor_from_organism(organism, False)
+          self.__add_predator_prey_factor(organism, False)
         elif (hasattr(organism, "Prey") and \
               self.scientific_name() in organism.Prey):
           # Add a movement factor that causes them to be attracted to us.
-          organism.add_factor_from_organism(self, False)
+          organism.__add_predator_prey_factor(self, False)
           # Add a movement factor that causes us to flee them.
-          self.add_factor_from_organism(organism, True)
+          self.__add_predator_prey_factor(organism, True)
+
+        # All organisms should be attracted to other organisms of the same
+        # species but opposite sex.
+        if (self.same_species(organism) and self.get_sex() != organism.get_sex()):
+          self.__add_sexual_attraction_factor(organism)
+          organism.__add_sexual_attraction_factor(self)
 
   """ Returns whether or not the organism is alive. """
   def is_alive(self):
@@ -245,14 +256,17 @@ class Organism(grid_object.GridObject, AttributeHelper):
   Args:
     conflicted: The organism we are conflicting with.
   Returns:
-    True if the conflict was resolved, False otherwise. """
+    True if mating resulted in pregnancy, False otherwise. """
   def __handle_sexual_reproduction(self, conflicted):
     # First of all, we need to be the same species.
     if not self.same_species(conflicted):
       return False
-
     if self.get_sex() + conflicted.get_sex() != 1:
       # Despite SCOTUS, we don't implement gay marriage.
+      return False
+    # If we're pregnant already, nothing that they can do will make a
+    # difference, so there's no point in us bothering to simulate it.
+    if (self.get_pregnant() or conflicted.get_pregnant()):
       return False
 
     # TODO (danielp): Eventually we'll need a better way of determining who's
@@ -272,17 +286,20 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # Of course, there's only a certain probability that they actually made a
     # baby.
     conceived = random.random()
-    if conceived < self.Reproduction.ConceptionProbability:
-      if not self.get_sex():
-        # We're pregnant.
-        logger.info("Organism %d is pregnant." % (self.get_index()))
-        self._pregnant = True
-        self._calculate_required_gestation()
-      else:
-        # We're the daddy.
-        logger.info("Organism %d is pregnant." % (conflicted.get_index()))
-        conflicted._pregnant = True
-        conflicted._calculate_required_gestation()
+    if conceived > self.Reproduction.ConceptionProbability:
+      # Didn't conceive.
+      return False
+
+    if not self.get_sex():
+      # We're pregnant.
+      logger.info("Organism %d is pregnant." % (self.get_index()))
+      self._pregnant = True
+      self._calculate_required_gestation()
+    else:
+      # We're the daddy.
+      logger.info("Organism %d is pregnant." % (conflicted.get_index()))
+      conflicted._pregnant = True
+      conflicted._calculate_required_gestation()
 
     return True
 
@@ -315,11 +332,12 @@ class Organism(grid_object.GridObject, AttributeHelper):
         continue
       organism.cleanup_organism(self)
 
-  """ Adds a movement factor from a specific organism.
+  """ Adds a movement factor from a specific organism for predator-prey
+  relationships.
   organism: The organism to use for the factor.
   prey: True if we are the prey of that organism. Otherwise, we are the
   predator. """
-  def add_factor_from_organism(self, organism, prey):
+  def __add_predator_prey_factor(self, organism, prey):
     logger.debug("%d: Adding factor for %d. Prey: %s" % (self.get_index(),
                                                          organism.get_index(),
                                                          prey))
@@ -332,8 +350,23 @@ class Organism(grid_object.GridObject, AttributeHelper):
       visibility = self.Metabolism.Animal.PreyFactorVisibility
 
     # Actually add the factor.
-    self._object.AddFactorFromOrganism(organism._object, strength,
-                                         visibility)
+    self._object.AddFactorFromOrganism(organism._object, strength, visibility)
+
+  """ Adds a movement factor from a specific organism to simulate sexual
+  attraction.
+  Args:
+    organism: The organism to use for the factor.
+  """
+  def __add_sexual_attraction_factor(self, organism):
+    logger.debug("%d: Adding sexual attraction for %d.\n" % \
+        (self.get_index(),
+         organism.get_index()))
+
+    strength = self.Reproduction.MatingFactorStrength
+    visibility = self.Reproduction.MatingFactorVisibility
+
+    # Add the factor.
+    self._object.AddFactorFromOrganism(organism._object, strength, visibility)
 
   """ Removes all references to another organism from this organism.
   organism: The organism to remove references to. """
@@ -387,8 +420,6 @@ class Organism(grid_object.GridObject, AttributeHelper):
   Returns: True if the organism should give birth, False otherwise. """
   def should_give_birth(self, cycle_time):
     self.__gestation_time += cycle_time
-    print("Gestation time, required: %f, %f\n" % (self.__gestation_time,
-                                                  self.__required_gestation))
 
     if self.__gestation_time >= self.__required_gestation:
       # We've waited long enough.
@@ -406,6 +437,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
                          self.__iteration_time, allow_conflict=True)
     # Add our attributes.
     offspring.set_attributes(self._attributes)
+    offspring.add_movement_factors()
     # Initially, we're guaranteed to have a conflict with our mother, so run the
     # default conflict handler now.
     offspring.__default_conflict_handler()

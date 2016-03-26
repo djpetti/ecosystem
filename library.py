@@ -164,6 +164,7 @@ class Library:
 
     organism = Organism(grid, position, iteration_time)
     organism.set_attributes(merged)
+    organism.add_movement_factors()
 
     if grid.scale() < 0:
       # This is the first organism we added.

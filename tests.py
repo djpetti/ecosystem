@@ -168,7 +168,8 @@ class TestOrganism(unittest.TestCase):
     update_handler.PregnancyHandler()
 
     # Set pregnancy attributes. Make gestation last for 2 cycles.
-    attributes = {"Taxonomy": {"Kingdom": "Animalia"},
+    attributes = {"Taxonomy": {"Kingdom": "Animalia", "Genus": "Test",
+                               "Species": "Test"},
                   "Metabolism": {"Animal": {"InitialMass": 0,
                   "InitialFatMass": 0, "BodyTemperature": 0,
                   "DragCoefficient": 0}},
@@ -183,13 +184,14 @@ class TestOrganism(unittest.TestCase):
 
     # Wait one cycle.
     self.__organism.update()
+    self.__grid.Update()
     # Nothing should change.
-    print("Checking pregnancy.")
     self.assertEqual(True, self.__organism.get_pregnant())
     self.assertEqual((False, []), self.__organism.get_offspring())
 
     # Try it again.
     self.__organism.update()
+    self.__grid.Update()
     # Now it should have given birth.
     self.assertEqual(False, self.__organism.get_pregnant())
     new, offspring = self.__organism.get_offspring()
@@ -228,6 +230,11 @@ class TestLibrary(unittest.TestCase):
         "  Family: TestFamily\n" \
         "  Genus:  TestGenus\n" \
         "  Species: TestSpecies\n" \
+        "Reproduction:\n" \
+        "  GestationMean: 0\n" \
+        "  GestationStdDev: 0\n" \
+        "  MatingFactorStrength: 0\n" \
+        "  MatingFactorVisibility: -1\n" \
         "Scale: 1\n"
 
     test_file = open("test_library/test_species.yaml", "w")
@@ -279,7 +286,8 @@ class TestLibrary(unittest.TestCase):
 """ Tests for visualizations. """
 class TestVisualizations(unittest.TestCase):
   def setUp(self):
-    test_attributes = {"Visualization": {"Color": "#00FF00"}}
+    test_attributes = {"Visualization": {"Color": "#00FF00"},
+                       "Taxonomy": {"Kingdom": "Test"}}
 
     self.__grid = C_Grid(100, 100)
     self.__grid_object = organism.Organism(self.__grid, (5, 5), 0)

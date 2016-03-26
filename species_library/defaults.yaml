@@ -38,6 +38,12 @@ Metabolism:
     PredatorFactorVisibility: -1
 
 Reproduction:
+  # The default strength to use for movement factors that attract the animal to
+  # potential mates.
+  MatingFactorStrength: 100
+  # The default visibility to use for the above movement factors.
+  MatingFactorVisibility: -1
+
   # A fixed probability that an organism will be willing to mate.
   WantsSex: 0.5
   # The probability that any given mating will result in conception.

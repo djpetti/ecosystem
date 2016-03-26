@@ -104,7 +104,7 @@ class Simulation:
       # Check if we have any new offspring.
       new, offspring = grid_object.get_offspring()
       if new:
-        logger.debug("Found new offspring from %d.\n", grid_object.get_id())
+        logger.debug("Found new offspring from %d.\n", grid_object.get_index())
         self.__add_to_simulation(offspring[-1])
 
     for organism in to_delete:
