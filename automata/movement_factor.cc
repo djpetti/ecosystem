@@ -21,9 +21,10 @@ bool MovementFactor::SetX(int x) {
 
 int MovementFactor::GetX() {
   if (organism_) {
-    // We want the baked position, so that new changes to the grid don't
-    // influence the ones that follow.
-    organism_->GetBakedPosition(&x_, &y_);
+    // Using the non-baked position introduces a dependency on update order, and
+    // thus, some inherent randomness. However, it neatly avoids situations like
+    // the oscillation problems I was having with mutual attraction.
+    organism_->get_position(&x_, &y_);
   }
 
   return x_;
@@ -39,7 +40,7 @@ bool MovementFactor::SetY(int y) {
 
 int MovementFactor::GetY() {
   if (organism_) {
-    organism_->GetBakedPosition(&x_, &y_);
+    organism_->get_position(&x_, &y_);
   }
 
   return y_;
