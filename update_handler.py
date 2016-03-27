@@ -273,10 +273,10 @@ class PregnancyHandler(UpdateHandler):
     # Check to make sure that the organism is actually pregnant.
     return organism.get_pregnant()
 
-  def run(self, organism, iteration_time):
+  def run(self, organism, *args):
     # Check gestation period.
     print("Running pregnancy handler.")
-    give_birth = organism.should_give_birth(iteration_time)
+    give_birth = organism.should_give_birth()
     if give_birth:
       logger.info("Organism %d is giving birth." % (organism.get_index()))
 

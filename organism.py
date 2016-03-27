@@ -416,10 +416,9 @@ class Organism(grid_object.GridObject, AttributeHelper):
   """ Checks if an organism should give birth. If they shouldn't, it increments
   the counter. This is meant to be called every cycle, and assumes that the
   organism is pregnant.
-  cycle_time: How long each cycle is. (s)
   Returns: True if the organism should give birth, False otherwise. """
-  def should_give_birth(self, cycle_time):
-    self.__gestation_time += cycle_time
+  def should_give_birth(self):
+    self.__gestation_time += 1
 
     if self.__gestation_time >= self.__required_gestation:
       # We've waited long enough.
