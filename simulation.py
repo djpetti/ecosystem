@@ -7,6 +7,7 @@ class SimulationError(Exception):
 
 from multiprocessing import Process, Value
 
+import collections
 import logging
 import random
 
@@ -53,7 +54,7 @@ class Simulation:
         self.__x_size, self.__y_size)
 
     # The list of objects on the grid.
-    self.__grid_objects = []
+    self.__grid_objects = collections.deque([])
 
     # The frequency for updating the graphics.
     graphics_limiter = PhasedLoop(30)
@@ -95,20 +96,21 @@ class Simulation:
   """ Completely update the grid a single time. """
   def __run_iteration(self):
     # Update the status of all objects.
-    to_delete = []
-    for grid_object in self.__grid_objects:
+    expected_objects = len(self.__grid_objects)
+    for i in range(0, expected_objects):
+      grid_object = self.__grid_objects.pop()
+      self.__grid_objects.appendleft(grid_object)
+
       if not grid_object.update():
         # Organism died. Remove it. (Already logged.)
-        to_delete.append(grid_object)
+        self.__grid_objects.popleft()
+        expected_objects -= 1
 
       # Check if we have any new offspring.
       new, offspring = grid_object.get_offspring()
       if new:
         logger.debug("Found new offspring from %d.\n", grid_object.get_index())
         self.__add_to_simulation(offspring[-1])
-
-    for organism in to_delete:
-      self.__grid_objects.remove(organism)
 
     # Update the grid.
     if not self.__grid.Update():
@@ -121,7 +123,7 @@ class Simulation:
   Args:
     organism: The organism to add. """
   def __add_to_simulation(self, organism):
-    self.__grid_objects.append(organism)
+    self.__grid_objects.appendleft(organism)
 
     # Add a visualization for the organism.
     visualization.GridObjectVisualization(self.__grid_vis, organism)

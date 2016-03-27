@@ -175,7 +175,9 @@ class TestOrganism(unittest.TestCase):
                   "DragCoefficient": 0}},
                   "Scale": 1.0, "Vision": -1,
                   "Reproduction": {"GestationMean": 2.0 / (24.0 * 60.0 * 60.0),
-                                   "GestationStdDev": 0}}
+                                   "GestationStdDev": 0,
+                                   "MatingFactorStrength": 0,
+                                   "MatingFactorVisibility": -1}}
     self.__organism.set_attributes(attributes)
 
     # Make it initially pregnant.
