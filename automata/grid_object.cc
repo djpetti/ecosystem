@@ -59,6 +59,10 @@ bool GridObject::SetPosition(int x, int y) {
 
   if (request_stasis) {
     // If we're staying in the same place, we're done.
+    if (grid_->GetOccupant(x_, y_) == this) {
+      last_x_ = x_;
+      last_y_ = y_;
+    }
     return !conflicted;
   }
 
