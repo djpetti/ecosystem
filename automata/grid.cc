@@ -246,6 +246,11 @@ bool Grid::MoveObject(int x, int y,
   // Remove blacklisted and conflicted locations from consideration.
   RemoveUnusable(&xs, &ys);
 
+  // If we have nothing left at this point, don't even bother.
+  if (xs.empty() && ys.empty()) {
+    return false;
+  }
+
   double probabilities[8];
   CalculateProbabilities(visible_factors, xs, ys, probabilities);
 

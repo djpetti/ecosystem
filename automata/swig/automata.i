@@ -46,7 +46,7 @@ class Organism : public GridObject {
   void AddFactor(int x, int y, int strength, int visibility = -1);
   void AddFactorFromOrganism(Organism *organism, int strength,
       int visibility = -1);
-  bool DefaultConflictHandler();
+  bool DefaultConflictHandler(int max_depth);
   void Die();
   bool IsAlive() const;
   GridObject *GetConflict();

@@ -68,9 +68,11 @@ class Organism : public GridObject {
   // another. It resolves the conflict by forcing a random one of them to
   // move again. This method can be called on either organism involved in a
   // conflict.
+  // max_depth: The maximum number of times that we will move organisms in order
+  // to resolve a conflict, before failing.
   // Returns: false if it fails to update the position of the organism it is
   // moving, or if it finds that this organism is not conflicted.
-  bool DefaultConflictHandler();
+  bool DefaultConflictHandler(int max_depth);
   // Specifies that this particular organism has died and is now defunct.
   void Die();
   // Returns: Whether or not the organism is alive.
@@ -90,6 +92,11 @@ class Organism : public GridObject {
   // blacklist: True if we're blacklisting, false if we're unblacklisting.
   // levels: How many levels to use when calculating the neighborhood.
   void BlacklistOccupied(int x, int y, bool blacklisting, int levels);
+  // Actually does the conflict resolution. (In some cases, this can be
+  // recursive.)
+  // current_depth: How many recursive calls we've made.
+  // max_depth: Maximum number of recursive calls we can make.
+  bool DoDefaultConflictHandler(int current_depth, int max_depth);
 
   // The set of movement factors on this grid that could possibly affect this
   // organism.

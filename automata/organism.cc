@@ -24,8 +24,9 @@ bool Organism::UpdatePosition(int use_x /*= -1*/, int use_y /*= -1*/) {
   // This only returns false if x and y are out of range, so if it is, we have a
   // pretty serious problem.
   printf("%d: Have %zu factors.\n", index_, factors_.size());
-  assert(grid_->MoveObject(use_x, use_y, factors_, &x, &y, speed_, vision_) &&
-         "MoveObject() failed unexpectedly.");
+  if (!grid_->MoveObject(use_x, use_y, factors_, &x, &y, speed_, vision_)) {
+    return false;
+  }
 
   if (x_ == x && y_ == y) {
     printf("Still staying in the same place.\n");
@@ -54,7 +55,11 @@ void Organism::BlacklistOccupied(int x, int y, bool blacklisting, int levels) {
   }
 }
 
-bool Organism::DefaultConflictHandler() {
+bool Organism::DefaultConflictHandler(int max_depth) {
+  return DoDefaultConflictHandler(0, max_depth);
+}
+
+bool Organism::DoDefaultConflictHandler(int current_depth, int max_depth) {
   // Get the other organism that we are conflicted with.
   printf("Checking conflict.\n");
   Organism *organism = dynamic_cast<Organism *>(grid_->GetConflict(x_, y_));
@@ -67,17 +72,24 @@ bool Organism::DefaultConflictHandler() {
     organism = dynamic_cast<Organism *>(grid_->GetPending(x_, y_));
   }
 
-  // In this case, we'll pick one of the organisms to move again at random.
-  int random = rand() % 2;
-
   Organism *to_move;
   Organism *other_option;
-  if (random) {
-    to_move = this;
-    other_option = organism;
+  if (!current_depth) {
+    // In this case, we'll pick one of the organisms to move again at random.
+    int random = rand() % 2;
+
+    if (random) {
+      to_move = this;
+      other_option = organism;
+    } else {
+      to_move = organism;
+      other_option = this;
+    }
   } else {
+    // If we're recursing, we already moved ourselves, and we don't want to try
+    // moving ourselves again.
     to_move = organism;
-    other_option = this;
+    other_option = nullptr;
   }
 
   int baked_x, baked_y;
@@ -106,14 +118,7 @@ bool Organism::DefaultConflictHandler() {
   // Move based on where we were before, so we can't move farther than we should
   // be allowed to in one cycle.
   printf("Updating position.\n");
-  if (!to_move->UpdatePosition(baked_x, baked_y)) {
-    // This means that our area is so densely populated that we
-    // literally can't move anywhere.
-    // TODO (danielp): The way higher-level code is written, this should
-    // technically never happen. Make sure this triggers an assertion failure
-    // somewhere.
-    return false;
-  }
+  const bool updated = to_move->UpdatePosition(baked_x, baked_y);
 
   printf("Unblacklisting old.\n");
   if (blacklisted_old) {
@@ -122,6 +127,26 @@ bool Organism::DefaultConflictHandler() {
   // Unblacklist stuff.
   printf("Unblacklisting all.\n");
   BlacklistOccupied(baked_x, baked_y, false, to_move->get_speed());
+
+  if (!updated) {
+    // This means that our area is so densely populated that we
+    // literally can't move anywhere. Most of the time this shouldn't happen,
+    // however, there is one special case where it might. This occurs when a
+    // baby is born in a very densely-populated area and has to be placed. In
+    // this case, it is safe to recurse until we find a place.
+    if (current_depth >= max_depth) {
+      // We've reached the limit for how far we can go.
+      return false;
+    }
+
+    // As long as nothing's blacklisted, UpdatePosition doesn't really care if
+    // we generate a conflict or not. It will still try to move the organism to
+    // a new place.
+    assert(!to_move->UpdatePosition(baked_x, baked_y));
+    // Now recurse. What will happen here is the organism we're now conflicting
+    // with will innevitably be displaced.
+    return to_move->DoDefaultConflictHandler(current_depth + 1, max_depth);
+  }
 
   return true;
 }

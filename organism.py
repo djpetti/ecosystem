@@ -205,11 +205,15 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # Fall back on the default conflict handler.
     self.__default_conflict_handler()
 
-  """ Runs the default conflict handler on this organism. """
-  def __default_conflict_handler(self):
+  """ Runs the default conflict handler on this organism.
+  Args:
+    max_depth: The maximum number of recursive iterations that can be run by the
+               conflict handler. It defaults to zero, because in all normal
+               circumstances, a single iteration is enough. """
+  def __default_conflict_handler(self, max_depth=0):
     logger.info("Using default conflict handler for %d." % (self.get_index()))
 
-    if not self._object.DefaultConflictHandler():
+    if not self._object.DefaultConflictHandler(max_depth):
       # This is actually a significant error, because we either failed for a
       # reason other than being conflicted or failed to resolve the conflict.
       logger.log_and_raise(OrganismError,
@@ -438,8 +442,10 @@ class Organism(grid_object.GridObject, AttributeHelper):
     offspring.set_attributes(self._attributes)
     offspring.add_movement_factors()
     # Initially, we're guaranteed to have a conflict with our mother, so run the
-    # default conflict handler now.
-    offspring.__default_conflict_handler()
+    # default conflict handler now. This also represents a special case for
+    # conflict handling, where, if our area is densely populated, we may have to
+    # run extra iterations.
+    offspring.__default_conflict_handler(max_depth=len(Organism.grid_objects))
 
     # Add it to our list of offspring.
     self.__offspring.append(offspring)

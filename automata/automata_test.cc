@@ -1,4 +1,6 @@
 #include <list>
+#include <unordered_map>
+#include <utility>
 
 #include "automata/grid.h"
 #include "automata/grid_object.h"
@@ -287,7 +289,7 @@ TEST_F(AutomataTest, ConflictResolutionTest) {
   EXPECT_TRUE(conflicts1[0] == &object2 || conflicts2[0] == &object2);
 
   // We can use the default conflict handler to resolve this conflict.
-  EXPECT_TRUE(object1.DefaultConflictHandler());
+  EXPECT_TRUE(object1.DefaultConflictHandler(0));
 
   // The conflict should be resolved.
   EXPECT_EQ(nullptr, grid_.GetConflict(2, 2));
@@ -304,7 +306,7 @@ TEST_F(AutomataTest, ConflictResolutionTest) {
   EXPECT_EQ(&object1, grid_.GetConflict(7, 7));
 
   // The handler should work just as well if we run it on the pending object.
-  EXPECT_TRUE(object2.DefaultConflictHandler());
+  EXPECT_TRUE(object2.DefaultConflictHandler(0));
 
   // The conflict should be resolved.
   EXPECT_EQ(nullptr, grid_.GetConflict(7, 7));
@@ -470,6 +472,74 @@ TEST_F(AutomataTest, OrganismStasisTest) {
   EXPECT_TRUE(object1.SetPosition(2, 2));
   // The pending slot should be empty.
   EXPECT_EQ(nullptr, grid_.GetPending(0, 0));
+}
+
+// Does it handle recursive conflict resolution properly?
+TEST_F(AutomataTest, RecursiveConflictResolutionTest) {
+  Organism conflicted(&grid_, 0);
+
+  // Make organisms that completely surround our first one.
+  Organism *surrounding[9];
+  for (int i = 0; i < 9; ++i) {
+    surrounding[i] = new Organism(&grid_, i + 9);
+  }
+
+  // Set positions of everything.
+  int surrounding_i = 0;
+  for (int x = 1; x < 4; ++x) {
+    for (int y = 1; y < 4; ++y) {
+      ASSERT_TRUE(surrounding[surrounding_i++]->Initialize(x, y));
+    }
+  }
+  // Bake their positions initially. This is because the conflict handler
+  // requires at least one of the involved organisms to be baked.
+  ASSERT_TRUE(grid_.Update());
+
+  // Keep a mapping of the original positions of everything for later use.
+  ::std::unordered_map<Organism *, ::std::pair<int, int> > positions;
+  positions[&conflicted] = ::std::make_pair(2, 2);
+
+  // Now we want to request stasis for all of them.
+  for (int i = 0; i < 9; ++i) {
+    int x, y;
+    ASSERT_TRUE(surrounding[i]->GetBakedPosition(&x, &y));
+    positions[surrounding[i]] = ::std::make_pair(x, y);
+    ASSERT_TRUE(surrounding[i]->SetPosition(x, y));
+  }
+  // Our main organism should now be conflicted from the get-go.
+  ASSERT_FALSE(conflicted.Initialize(2, 2));
+
+  // Now, since it's surrounded, a normal conflict resolution should fail.
+  EXPECT_FALSE(conflicted.DefaultConflictHandler(0));
+  // However, a recursive one should succeed with one extra step.
+  EXPECT_TRUE(conflicted.DefaultConflictHandler(1));
+
+  // Updating again should work.
+  ASSERT_TRUE(grid_.Update());
+
+  // No positioning rules should have been violated, which means that nothing
+  // got pushed out more than one space.
+  int new_x, old_x, new_y, old_y;
+  old_x = positions[&conflicted].first;
+  old_y = positions[&conflicted].second;
+
+  // Main organism.
+  ASSERT_TRUE(conflicted.GetBakedPosition(&new_x, &new_y));
+  EXPECT_LE(abs(new_x - old_x), 1);
+  EXPECT_LE(abs(new_y - old_y), 1);
+  // Surrounding organisms.
+  for (int i = 0; i < 9; ++i) {
+    old_x = positions[surrounding[i]].first;
+    old_y = positions[surrounding[i]].second;
+    ASSERT_TRUE(surrounding[i]->GetBakedPosition(&new_x, &new_y));
+    EXPECT_LE(abs(new_x - old_x), 1);
+    EXPECT_LE(abs(new_y - old_y), 1);
+  }
+
+  // Clean up organisms.
+  for (int i = 0; i < 9; ++i) {
+    delete surrounding[i];
+  }
 }
 
 }  //  testing

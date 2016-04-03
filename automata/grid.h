@@ -124,6 +124,8 @@ class Grid {
   // we could move. See GetNeighborhood for an explanation of levels.
   // vision: The maximum number of cells we can be from any factor and still
   // perceive it.
+  // Returns: True if it succeeds, false if either getting the neighborhood
+  // fails, or if there is absolutely nowhere that it can go.
   bool MoveObject(int x, int y, const ::std::list<MovementFactor> &factors,
                   int *new_x, int *new_y, int levels = 1, int vision = -1);
   // "Bakes" the state of the grid. Commits any new changes that were made since
