@@ -267,7 +267,7 @@ class PregnancyHandler(UpdateHandler):
     super().__init__()
 
     # Only animals can be pregnant.
-    self.filter_attribute("Taxonomy.Kingdom", ["Opisthokonta", "Animalia"])
+    self.filter_attribute("Taxonomy.Class", "Mammalia")
 
   def dynamic_filter(self, organism):
     # Check to make sure that the organism is actually pregnant.

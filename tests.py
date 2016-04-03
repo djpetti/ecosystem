@@ -168,8 +168,8 @@ class TestOrganism(unittest.TestCase):
     update_handler.PregnancyHandler()
 
     # Set pregnancy attributes. Make gestation last for 2 cycles.
-    attributes = {"Taxonomy": {"Kingdom": "Animalia", "Genus": "Test",
-                               "Species": "Test"},
+    attributes = {"Taxonomy": {"Kingdom": "Animalia", "Class": "Mammalia",
+                               "Genus": "Test", "Species": "Test"},
                   "Metabolism": {"Animal": {"InitialMass": 0,
                   "InitialFatMass": 0, "BodyTemperature": 0,
                   "DragCoefficient": 0}},
