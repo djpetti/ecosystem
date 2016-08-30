@@ -5,7 +5,7 @@
       'type': 'shared_library',
       'cflags': [
         '-fPIC',
-        '-I"/usr/include/python3.4"',
+        '-I"/usr/include/python3.5"',
         '-Wno-unused-label', # Stupid swig.
       ],
       'sources': [
