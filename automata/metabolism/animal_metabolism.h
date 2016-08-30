@@ -29,11 +29,22 @@ class AnimalMetabolism : public Metabolism {
   // distance: How far we moved. (m)
   // time: Time it took us to move that distance. (s)
   void Move(double distance, int time);
+  // This is a special mechanism to simulate a long-term pregnancy. It will
+  // cause the parent organism's energy needs to steadily grow as the baby
+  // develops.
+  // gestation_cycles: How many cycles the gestation period lasts.
+  // cycle: The current cycle we are on in the gestation period.
+  // cycle_time: The duration of each cycle, in seconds. It is assumed that this
+  // method will be called once per cycle.
+  // birth_mass: The mass of the baby at birth.
+  void UpdatePregnancy(int gestation_cycles, int cycle, int cycle_time,
+                       double birth_mass);
+  // Allows the animal to reproduce. A given amount of this animal's mass will
+  // be transferred into the offspring.
+  // offspring_mass: The initial mass of the offspring.
+  void Reproduce(double mass);
 
  private:
-  // Updates the basal metabolic rate based on the current mass.
-  void UpdateBasalRate();
-
   // Basal metabolic rate. (W/kg)
   double basal_rate_;
   // Body temperature of organism. (K)

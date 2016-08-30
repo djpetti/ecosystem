@@ -79,7 +79,7 @@ class PlantMetabolism : public Metabolism {
 class AnimalMetabolism : public Metabolism {
  public:
   AnimalMetabolism(double mass, double fat_mass, double body_temp,
-                  double scale, double drag_coefficient);
+                   double scale, double drag_coefficient);
   ~AnimalMetabolism();
   void Update(int time);
   void UseEnergy(double amount);
@@ -88,4 +88,8 @@ class AnimalMetabolism : public Metabolism {
 
   void Consume(Metabolism *metabolism);
   void Move(double distance, int time);
+
+  void UpdatePregnancy(int gestation_cycles, int cycle, int cycle_time,
+                       double birth_mass);
+  void Reproduce(double mass);
 };

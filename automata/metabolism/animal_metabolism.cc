@@ -18,6 +18,18 @@ constexpr double kB3 = 4799.0;
 constexpr double kAirDensity = 1.225;
 // Drag coefficient
 
+// Updates the basal metabolic rate based on the current mass.
+// mass: Mass of the organism. (kg)
+// body_temp: Body temperature. (K)
+// Returns: The basal metabolic rate.
+double UpdateBasalRate(double mass, double body_temp) {
+  // Calculate default rate from an updated version of Kleiber's law. This
+  // comes from a 2010 article in nature.
+  return ::std::pow(10, kB0 + kB1 * ::std::log(mass) +
+                            kB2 * ::std::pow(::std::log(mass), 2) -
+                            kB3 / body_temp);
+}
+
 }  // namespace
 
 AnimalMetabolism::AnimalMetabolism(double mass, double fat_mass,
@@ -30,15 +42,7 @@ AnimalMetabolism::AnimalMetabolism(double mass, double fat_mass,
   // Figure out the initial energy from fat reserves.
   energy_ = fat_mass * 1000 * kFatEnergy * 1000;
 
-  UpdateBasalRate();
-}
-
-void AnimalMetabolism::UpdateBasalRate() {
-  // Calculate default rate from an updated version of Kleiber's law. This
-  // comes from a 2010 article in nature.
-  basal_rate_ = ::std::pow(10, kB0 + kB1 * ::std::log(mass_) +
-                                   kB2 * ::std::pow(::std::log(mass_), 2) -
-                                   kB3 / body_temp_);
+  UpdateBasalRate(mass_, body_temp_);
 }
 
 void AnimalMetabolism::Consume(const Metabolism *metabolism) {
@@ -48,7 +52,7 @@ void AnimalMetabolism::Consume(const Metabolism *metabolism) {
 
 void AnimalMetabolism::Update(int time) {
   // Calculate energy losses due to basal metabolic rate.
-  UpdateBasalRate();
+  basal_rate_ = UpdateBasalRate(mass_, body_temp_);
   const double energy_loss = basal_rate_ * time;
   UseEnergy(energy_loss);
 }
@@ -72,6 +76,24 @@ void AnimalMetabolism::Move(double distance, int time) {
   // the animal, which should equal the energy expended by the animal.
   const double energy_use = drag * distance;
   UseEnergy(energy_use);
+}
+
+void AnimalMetabolism::UpdatePregnancy(int gestation_cycles, int cycle,
+                                       int cycle_time, double birth_mass) {
+  // Assuming the mass of the baby increases roughly linearly, calculate the
+  // current mass of the baby.
+  const double current_mass = birth_mass / gestation_cycles * cycle;
+  // Calculate energy needs of the baby.
+  const double energy_use_rate = UpdateBasalRate(current_mass, body_temp_);
+  const double baby_energy = energy_use_rate * cycle_time;
+
+  // Subtract this from the energy reserves of the mother.
+  UseEnergy(baby_energy);
+}
+
+void AnimalMetabolism::Reproduce(double mass) {
+  // Subtract the mass from that of the organism.
+  mass_ -= mass;
 }
 
 }  // namespace metabolism

@@ -105,5 +105,30 @@ TEST_F(AnimalMetabolismTest, BasalRateUpdateTest) {
   EXPECT_LT(new_energy - metabolism_.energy(), energy_loss);
 }
 
+// Does reproduction work as expected?
+TEST_F(AnimalMetabolismTest, ReproductionTest) {
+  const double start_mass = metabolism_.mass();
+  const double start_energy = metabolism_.energy();
+
+  // Simulate a pregnancy.
+  double last_mass = start_mass;
+  double last_energy = start_energy;
+  double last_energy_change = 0;
+  for (int i = 1; i < 11; ++i) {
+    metabolism_.UpdatePregnancy(10, i, 10, 5);
+    EXPECT_LT(metabolism_.mass(), last_mass);
+    EXPECT_LT(metabolism_.energy(), last_energy);
+    // (These are negative.)
+    EXPECT_LT(metabolism_.energy() - last_energy, last_energy_change);
+
+    last_energy_change = metabolism_.energy() - last_energy;
+    last_mass = metabolism_.mass();
+    last_energy = metabolism_.energy();
+  }
+
+  metabolism_.Reproduce(1);
+  EXPECT_NEAR(start_mass - 1, metabolism_.mass(), 0.00001);
+}
+
 }  // namespace metabolism
 }  // namespace automata

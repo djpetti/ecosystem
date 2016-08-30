@@ -81,7 +81,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
     # Whether or not the organism is pregnant.
     self._pregnant = False
     # How long we have been pregnant for.
-    self.__gestation_time = 0
+    self.__gestation_cycles = 0
 
     # List of all offspring that we have produced.
     self.__offspring = []
@@ -413,7 +413,7 @@ class Organism(grid_object.GridObject, AttributeHelper):
         24.0 * 60.0 * 60.0 / self.__iteration_time
     logger.debug("Expected gestation is %d cycles, with stddev of %d." % \
                  (mean, stddev))
-    self.__required_gestation = random.gauss(mean, stddev)
+    self.__required_gestation = int(random.gauss(mean, stddev))
     logger.info("Gestation time for %d: %f." % (self.get_index(),
                                                 self.__required_gestation))
 
@@ -422,12 +422,12 @@ class Organism(grid_object.GridObject, AttributeHelper):
   organism is pregnant.
   Returns: True if the organism should give birth, False otherwise. """
   def should_give_birth(self):
-    self.__gestation_time += 1
+    self.__gestation_cycles += 1
 
-    if self.__gestation_time >= self.__required_gestation:
+    if self.__gestation_cycles >= self.__required_gestation:
       # We've waited long enough.
       self._pregnant = False
-      self.__gestation_time = 0
+      self.__gestation_cycles = 0
       return True
 
     return False
@@ -460,3 +460,11 @@ class Organism(grid_object.GridObject, AttributeHelper):
     new_offspring = self.__new_offspring
     self.__new_offspring = False
     return new_offspring, self.__offspring
+
+  """ Returns: How many cycles we have been pregnant for. """
+  def get_gestation_cycles(self):
+    return self.__gestation_cycles
+
+  """ Returns: How many cycles we will be pregnant for before we give birth. """
+  def get_required_gestation(self):
+    return self.__required_gestation

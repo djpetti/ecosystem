@@ -169,9 +169,7 @@ class AnimalHandler(UpdateHandler):
 
     # Update animal position.
     try:
-      print("Updating position.")
       organism.update_position()
-      print("Updated position.")
     except OrganismError:
       # Check to see if we have a conflict we can resolve.
       organism.handle_conflict()
@@ -266,22 +264,31 @@ class PregnancyHandler(UpdateHandler):
   def __init__(self):
     super().__init__()
 
-    # Only animals can be pregnant.
+    # Only mammals can be pregnant.
     self.filter_attribute("Taxonomy.Class", "Mammalia")
 
   def dynamic_filter(self, organism):
     # Check to make sure that the organism is actually pregnant.
     return organism.get_pregnant()
 
-  def run(self, organism, *args):
+  def run(self, organism, iteration_time):
+    baby_mass = organism.Metabolism.Animal.InitialMass
+
     # Check gestation period.
-    print("Running pregnancy handler.")
     give_birth = organism.should_give_birth()
     if give_birth:
       logger.info("Organism %d is giving birth." % (organism.get_index()))
 
       # Create a new baby organism.
       offspring = organism.make_offspring()
+      # Update metabolism for birth.
+      organism.metabolism.Reproduce(baby_mass)
+
+
+    # Update energy consumption for pregnancy.
+    organism.metabolism.UpdatePregnancy(organism.get_required_gestation(),
+                                        organism.get_gestation_cycles(),
+                                        iteration_time, baby_mass)
 
 
 # Go and register all the update handlers.
