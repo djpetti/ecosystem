@@ -21,8 +21,6 @@ bool Organism::UpdatePosition(int use_x /*= -1*/, int use_y /*= -1*/) {
     use_x = x_;
     use_y = y_;
   }
-  // This only returns false if x and y are out of range, so if it is, we have a
-  // pretty serious problem.
   printf("%d: Have %zu factors.\n", index_, factors_.size());
   if (!grid_->MoveObject(use_x, use_y, factors_, &x, &y, speed_, vision_)) {
     return false;
@@ -61,10 +59,10 @@ bool Organism::DefaultConflictHandler(int max_depth) {
 
 bool Organism::DoDefaultConflictHandler(int current_depth, int max_depth) {
   // Get the other organism that we are conflicted with.
-  printf("Checking conflict.\n");
   Organism *organism = dynamic_cast<Organism *>(grid_->GetConflict(x_, y_));
   if (!organism) {
     // There's no conflict to resolve.
+    printf("No conflict to resolve.\n");
     return false;
   }
   if (organism == this) {
@@ -136,6 +134,7 @@ bool Organism::DoDefaultConflictHandler(int current_depth, int max_depth) {
     // this case, it is safe to recurse until we find a place.
     if (current_depth >= max_depth) {
       // We've reached the limit for how far we can go.
+      printf("Exceeded recursion limit: %d\n", max_depth);
       return false;
     }
 

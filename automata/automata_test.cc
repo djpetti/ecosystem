@@ -22,6 +22,48 @@ class AutomataTest : public ::testing::Test {
   Grid grid_;
 };
 
+// Another fixture for the two surrounded organisms tests, which have a lot of
+// common code.
+// Mostly, it's responsible for setting up a single organism completely
+// surrounded by others.
+class SurroundedOrganismTest : public AutomataTest {
+ protected:
+  SurroundedOrganismTest() : AutomataTest(), moving_organism_(&grid_, 0) {}
+
+  virtual void SetUp() {
+    ASSERT_TRUE(moving_organism_.Initialize(1, 1));
+
+    // Now create a set of organisms that surround this one.
+    for (int i = 0; i < 8; ++i) {
+      surrounding_[i] = new Organism(&grid_, i + 1);
+    }
+
+    // Initialize top three and bottom three.
+    for (int x = 0; x < 3; ++x) {
+      ASSERT_TRUE(surrounding_[x]->Initialize(x, 0));
+      ASSERT_TRUE(surrounding_[3 + x]->Initialize(x, 2));
+    }
+    // Initialize sides.
+    ASSERT_TRUE(surrounding_[6]->Initialize(0, 1));
+    ASSERT_TRUE(surrounding_[7]->Initialize(2, 1));
+
+    // Update once to bake all organism positions.
+    ASSERT_TRUE(grid_.Update());
+  }
+
+  virtual void TearDown() {
+    // Clean up the surrounding organisms.
+    for (int i = 0; i < 8; ++i) {
+      delete surrounding_[i];
+    }
+  }
+
+  // Organism that is being surrounded.
+  Organism moving_organism_;
+  // Array of surrounding organisms.
+  Organism *surrounding_[8];
+};
+
 TEST_F(AutomataTest, OccupantTest) {
   // Do SetOccupant() and GetOccupant() work?
   EXPECT_EQ(grid_.GetOccupant(0, 0), nullptr);
@@ -540,6 +582,58 @@ TEST_F(AutomataTest, RecursiveConflictResolutionTest) {
   for (int i = 0; i < 9; ++i) {
     delete surrounding[i];
   }
+}
+
+// Does it handle the situation when an organism is completely surrounded?
+// (In this case, the only sensible option is for it not to move.)
+TEST_F(SurroundedOrganismTest, BasicResolutionTest) {
+  // First, create a conflict.
+  int conflict_x, conflict_y;
+  // Request stasis for all of the surrounding ones.
+  for (int i = 0; i < 8; ++i) {
+    ASSERT_TRUE(surrounding_[i]->GetBakedPosition(&conflict_x, &conflict_y));
+    ASSERT_TRUE(surrounding_[i]->SetPosition(conflict_x, conflict_y));
+  }
+  // Now move the middle one to the same place.
+  ASSERT_FALSE(moving_organism_.SetPosition(conflict_x, conflict_y));
+
+  // Now, try to resolve the conflict. We should be able to do so without
+  // resorting to recursion.
+  EXPECT_TRUE(moving_organism_.DefaultConflictHandler(0));
+}
+
+// Does it handle a situation in which it is completely surrounded, and there is
+// no single-step way to resolve the conflict?
+TEST_F(SurroundedOrganismTest, RecursiveResolutionTest) {
+  // Create another organism that will take the place of the one we move towards
+  // the center.
+  Organism filler_organism(&grid_, 9);
+  ASSERT_TRUE(filler_organism.Initialize(3, 1));
+
+  // First, create a conflict.
+  // Request stasis for all of the surrounding ones, save for the last one,
+  // which we will move to the middle.
+  for (int i = 0; i < 7; ++i) {
+    int conflict_x, conflict_y;
+    ASSERT_TRUE(surrounding_[i]->GetBakedPosition(&conflict_x, &conflict_y));
+    ASSERT_TRUE(surrounding_[i]->SetPosition(conflict_x, conflict_y));
+  }
+  // Now move the middle one to the same place. We want to pick an organism to
+  // conflict with that can't be easily moved somewhere else, so we can
+  // eliminate the possibility that it moves that one instead.
+  ASSERT_FALSE(moving_organism_.SetPosition(0, 0));
+
+  // Move another one to the middle, so we can't go back.
+  ASSERT_TRUE(surrounding_[7]->SetPosition(1, 1));
+
+  // Now, move an additional organism into the vacated space on the edge, so
+  // that we can't go there.
+  ASSERT_TRUE(filler_organism.SetPosition(2, 1));
+
+  // Now, try to resolve the conflict in a single step. This should fail.
+  EXPECT_FALSE(moving_organism_.DefaultConflictHandler(0));
+  // However, using two recursive iterations should work.
+  EXPECT_TRUE(moving_organism_.DefaultConflictHandler(2));
 }
 
 }  //  testing
