@@ -21,6 +21,11 @@ class AnimalMetabolism : public Metabolism {
   virtual void Update(int time);
   virtual void UseEnergy(double amount);
 
+  // Returns the mass of the organism. If the organism is pregnant, it will
+  // subtract the mass of the baby, even though that extra mass gets figured
+  // into metabolism calculations.
+  virtual double mass() const;
+
   // Consume another organism, and calculate the nutrient gains by this
   // organism.
   // metabolism: The metabolism object associated with another organism.
@@ -33,11 +38,10 @@ class AnimalMetabolism : public Metabolism {
   // cause the parent organism's energy needs to steadily grow as the baby
   // develops.
   // gestation_cycles: How many cycles the gestation period lasts.
-  // cycle: The current cycle we are on in the gestation period.
   // cycle_time: The duration of each cycle, in seconds. It is assumed that this
   // method will be called once per cycle.
   // birth_mass: The mass of the baby at birth.
-  void UpdatePregnancy(int gestation_cycles, int cycle, int cycle_time,
+  void UpdatePregnancy(int gestation_cycles, int cycle_time,
                        double birth_mass);
   // Allows the animal to reproduce. A given amount of this animal's mass will
   // be transferred into the offspring.
@@ -53,6 +57,8 @@ class AnimalMetabolism : public Metabolism {
   double scale_;
   // Air drag coefficient of the organism.
   double drag_coefficient_;
+  // Mass of this organism that is directly attributable to a baby.
+  double baby_mass_ = 0.0;
 };
 
 }  // namespace metabolism

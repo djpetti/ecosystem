@@ -19,9 +19,9 @@ class Metabolism {
   virtual void UseEnergy(double amount) = 0;
 
   // Returns: The current mass of the organism in Kg's.
-  double mass() const { return mass_; }
+  virtual double mass() const { return mass_; }
   // Returns: The current energy reserves of the organism in J's.
-  double energy() const { return energy_; }
+  virtual double energy() const { return energy_; }
 
  protected:
   // The mass of the organism in Kg's.

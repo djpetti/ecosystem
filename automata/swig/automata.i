@@ -89,7 +89,6 @@ class AnimalMetabolism : public Metabolism {
   void Consume(Metabolism *metabolism);
   void Move(double distance, int time);
 
-  void UpdatePregnancy(int gestation_cycles, int cycle, int cycle_time,
-                       double birth_mass);
+  void UpdatePregnancy(int gestation_cycles, int cycle_time, double birth_mass);
   void Reproduce(double mass);
 };

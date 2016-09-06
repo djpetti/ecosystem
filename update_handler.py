@@ -287,7 +287,6 @@ class PregnancyHandler(UpdateHandler):
 
     # Update energy consumption for pregnancy.
     organism.metabolism.UpdatePregnancy(organism.get_required_gestation(),
-                                        organism.get_gestation_cycles(),
                                         iteration_time, baby_mass)
 
 

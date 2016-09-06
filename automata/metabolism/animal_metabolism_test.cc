@@ -115,7 +115,7 @@ TEST_F(AnimalMetabolismTest, ReproductionTest) {
   double last_energy = start_energy;
   double last_energy_change = 0;
   for (int i = 1; i < 11; ++i) {
-    metabolism_.UpdatePregnancy(10, i, 10, 5);
+    metabolism_.UpdatePregnancy(10, 10, 5);
     EXPECT_LT(metabolism_.mass(), last_mass);
     EXPECT_LT(metabolism_.energy(), last_energy);
     // (These are negative.)
@@ -128,6 +128,18 @@ TEST_F(AnimalMetabolismTest, ReproductionTest) {
 
   metabolism_.Reproduce(1);
   EXPECT_NEAR(start_mass - 1, metabolism_.mass(), 0.00001);
+}
+
+// Can we use all the energy we start out with?
+TEST_F(AnimalMetabolismTest, UseAllEnergyTest) {
+  double last_energy = metabolism_.energy();
+
+  while (metabolism_.energy() > 0) {
+    last_energy = metabolism_.energy();
+    metabolism_.Update(10000);
+
+    EXPECT_LT(metabolism_.energy(), last_energy);
+  }
 }
 
 }  // namespace metabolism
